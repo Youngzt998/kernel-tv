@@ -27,8 +27,8 @@ from triton.compiler import ASTSource
 from triton.compiler.compiler import make_backend
 from triton._C.libtriton import ir, passes
 
-# Repo root = the triton checkout (this file lives at <repo>/tv/eq_fuzzing/).
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# This repository's root (this file lives at <repo>/eq_fuzzing/).
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 # --------------------------------------------------------------------------- #
@@ -44,24 +44,30 @@ def parse_target(target_str: str, warp_size: int = 32) -> GPUTarget:
 # Locate the triton-opt binary
 # --------------------------------------------------------------------------- #
 def find_triton_opt() -> str:
-    """Find the ``triton-opt`` binary.
+    """Find the ``triton-opt`` binary, which belongs to the Triton checkout.
 
-    Order: ``$TRITON_OPT`` env var, then the worktree build dir, then $PATH.
+    Order: ``$TRITON_OPT``, then the build dir of the checkout ``$TRITON_ROOT``
+    names -- the same variable the CMake build uses (cmake/PrebuiltTriton.cmake)
+    -- then $PATH.
     """
     env = os.environ.get("TRITON_OPT")
     if env and Path(env).exists():
         return env
-    for pattern in ("build/*/bin/triton-opt", "python/build/*/bin/triton-opt"):
-        candidates = sorted(REPO_ROOT.glob(pattern))
-        if candidates:
-            return str(candidates[-1])
+    triton_root = os.environ.get("TRITON_ROOT")
+    if triton_root:
+        root = Path(triton_root)
+        for pattern in ("build/*/bin/triton-opt", "python/build/*/bin/triton-opt"):
+            candidates = sorted(root.glob(pattern))
+            if candidates:
+                return str(candidates[-1])
     import shutil
     found = shutil.which("triton-opt")
     if found:
         return found
     raise FileNotFoundError(
-        "triton-opt not found. Build the worktree with "
-        "`pip install -e . --no-build-isolation`, or set $TRITON_OPT.")
+        "triton-opt not found. Set $TRITON_ROOT to a built Triton checkout "
+        "(built with `pip install -e . --no-build-isolation`), or set "
+        "$TRITON_OPT to the binary.")
 
 
 def run_triton_opt(ir_text: str, in_ext: str, flags: List[str]) -> str:

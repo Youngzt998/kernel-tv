@@ -5,7 +5,7 @@ This module knows two things:
   1. Where the built `triton-tv` / `triton-opt` binaries live.
   2. How to run one validation and read its result.
 
-The `triton-tv` binary contract (see tv/triton-tv.cpp):
+The `triton-tv` binary contract (see bin/triton-tv.cpp):
   - exit code 0  -> prints "EQUIVALENT"
   - exit code 1  -> prints "NOT EQUIVALENT ..."
   - exit code 2  -> prints "UNKNOWN ..."
@@ -20,8 +20,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-# Repo root = three levels up from this file: <repo>/tv/eval/common.py
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# This repository's root: <repo>/eval/common.py
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Verdict names, keyed by the binary's exit code.
 VERDICT_BY_CODE = {0: "EQUIV", 1: "NEQ", 2: "UNKNOWN"}
@@ -37,58 +37,73 @@ class Result:
     stdout: str
 
 
-def _build_dir():
-    """The CMake build directory, the same one the Triton build uses."""
+def triton_root():
+    """The built Triton checkout this repo's Triton backend is pointed at.
+
+    Same $TRITON_ROOT the CMake build uses (cmake/PrebuiltTriton.cmake), so
+    there is one variable to set, not two. Returns None if it is unset.
+    """
+    root = os.getenv("TRITON_ROOT")
+    return Path(root) if root else None
+
+
+def _triton_build_dir():
+    """Triton's CMake build directory, the one its own build uses."""
+    root = triton_root()
+    if root is None:
+        return None
     # Prefer the project's own helper so we match the build exactly.
-    sys.path.insert(0, str(REPO_ROOT / "python"))
+    sys.path.insert(0, str(root / "python"))
     try:
         import build_helpers  # type: ignore
         return Path(build_helpers.get_cmake_dir())
     except Exception:
-        return None
+        hits = sorted(root.glob("build/cmake.*"))
+        return hits[-1] if hits else None
 
 
-def _glob_one(pattern):
-    hits = sorted(REPO_ROOT.glob(pattern))
-    return hits[0] if hits else None
-
-
-def find_binary(name, env_var):
-    """Locate a built binary by name.
-
-    Order: explicit env var -> the build_helpers build dir -> glob under build/.
-    `name` is "tv/triton-tv" or "bin/triton-opt" (path under the build dir).
-    Returns a Path or raises a clear error telling the user how to build it.
-    """
+def _from_env(env_var):
     override = os.getenv(env_var)
-    if override:
-        p = Path(override)
-        if p.is_file():
-            return p
-        raise FileNotFoundError(f"{env_var}={override} is not a file")
-
-    bd = _build_dir()
-    if bd is not None and (bd / name).is_file():
-        return bd / name
-
-    hit = _glob_one(f"build/cmake.*/{name}")
-    if hit:
-        return hit
-
-    target = Path(name).name
-    raise FileNotFoundError(
-        f"could not find '{target}'. Build it first, e.g.:\n"
-        f"    ninja -C {bd or '<build_dir>'} {target}\n"
-        f"or point {env_var} at the binary."
-    )
+    if not override:
+        return None
+    p = Path(override)
+    if p.is_file():
+        return p
+    raise FileNotFoundError(f"{env_var}={override} is not a file")
 
 
 def find_triton_tv():
-    return find_binary("tv/triton-tv", "TRITON_TV_BIN")
+    """Locate `triton-tv`, which this repository builds itself."""
+    hit = _from_env("TRITON_TV_BIN")
+    if hit:
+        return hit
+
+    for build in sorted(REPO_ROOT.glob("build*")):
+        candidate = build / "triton-tv"
+        if candidate.is_file():
+            return candidate
+
+    raise FileNotFoundError(
+        "could not find 'triton-tv'. Build it first:\n"
+        "    TRITON_ROOT=<a built Triton checkout> \\\n"
+        "        cmake -S . -B build -G Ninja && ninja -C build triton-tv\n"
+        "or point $TRITON_TV_BIN at the binary.")
 
 
 def find_triton_opt():
-    return find_binary("bin/triton-opt", "TRITON_OPT_BIN")
+    """Locate `triton-opt`, which belongs to the Triton checkout."""
+    hit = _from_env("TRITON_OPT_BIN")
+    if hit:
+        return hit
+
+    bd = _triton_build_dir()
+    if bd is not None and (bd / "bin" / "triton-opt").is_file():
+        return bd / "bin" / "triton-opt"
+
+    raise FileNotFoundError(
+        "could not find 'triton-opt'. Set $TRITON_ROOT to a built Triton "
+        "checkout (the same one the CMake build uses), or point "
+        "$TRITON_OPT_BIN at the binary.")
 
 
 def _parse_time(label, text):

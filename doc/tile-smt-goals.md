@@ -1,8 +1,8 @@
 # tile-smt — project goals (refined)
 
 High-level goals/vision for the refactor. Interface details live in
-`tv/doc/tile-smt-design.md`; cross-language evidence in
-`tv/doc/tensor-languages-survey.md`. This is a **draft** — revise as we discuss.
+`doc/tile-smt-design.md`; cross-language evidence in
+`doc/tensor-languages-survey.md`. This is a **draft** — revise as we discuss.
 
 ## 1. What tile-smt is
 
@@ -56,7 +56,7 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
   `tile-smt` memory/access interface must leave hooks for **multiple tiers
   (global/on-chip) + region access + DMA-style copy** now (even though M0 only
   implements global + linear-pointer), or this layer gets blocked later.
-- **builders** (`tv/builder/`, one per language): `builder/mlir` (shared
+- **builders** (`builder/`, one per language): `builder/mlir` (shared
   MLIR tools + `arith`/`math`/`scf`) and `builder/triton` (`tt.*` + entry) now;
   more later. A builder is thin: IR walk → core builder-API calls. Long-term goal:
   a builder for **every** supported language, modeling onto tile-smt/tile-gpu-smt.
@@ -85,10 +85,10 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
 3. **Soundness self-checks**: it must catch genuine differences (the `inequal`
    gate), not just confirm equivalences.
 
-## 6. Milestones — numbered plan in `tv/doc/roadmap.md` (M/T/V)
+## 6. Milestones — numbered plan in `doc/roadmap.md` (M/T/V)
 
 Execution uses stable **M/T/V** IDs (M = major work, T = testing, V = validation
-experiments); the full plan is `tv/doc/roadmap.md`. Summary:
+experiments); the full plan is `doc/roadmap.md`. Summary:
 - **M0** — migrate today's Triton-coupled impl onto tile-smt: extract `tile-smt`
   (SMT side; MLIR-free; Z3-only build+tests) + a thin **Triton adapter** (Triton
   side). Done = eval green through the adapter; tile-smt has zero MLIR.

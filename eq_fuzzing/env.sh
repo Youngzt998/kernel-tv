@@ -1,23 +1,25 @@
 # Machine-specific runtime glue for eq_fuzzing on this box.
 # Source it, then run: "$EQF_PY" -m eq_fuzzing.runner ...
 #
-# Why this exists: the tv checkout's .venv has triton (built here) but NOT torch,
-# and the offline build did not fetch the CUDA toolchain. We borrow torch from
-# the fbsource `beta` venv (via PYTHONPATH, with this checkout's python/ dir
-# FIRST so `import triton` resolves to the tv checkout) and point Triton at the
-# shared CUDA tools under ~/.triton. Runtime-only glue; the eq_fuzzing code
-# itself only uses the public Triton API + the triton-opt binary.
+# Why this exists: this repo needs a working `import triton` plus torch, and the
+# Triton checkout's own venv usually has triton but not torch. We borrow torch
+# from the fbsource `beta` venv (via PYTHONPATH, with the Triton checkout's
+# python/ dir FIRST so `import triton` resolves to that checkout) and point
+# Triton at the shared CUDA tools under ~/.triton. Runtime-only glue; the
+# eq_fuzzing code itself only uses the public Triton API + the triton-opt binary.
 
-# Triton repo root (this script is at <repo>/tv/eq_fuzzing/env.sh).
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# External deps (outside the triton tree, so necessarily absolute on this box).
+# The built Triton checkout -- the same $TRITON_ROOT the CMake build uses.
+: "${TRITON_ROOT:?set TRITON_ROOT to a built Triton checkout before sourcing this}"
+# This repository.
+TILE_SMT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# External deps (outside both trees, so necessarily absolute on this box).
 BETA_SP=/data/users/youngzt/fbsource/third-party/triton/beta/triton/.venv/lib/python3.12/site-packages
 
-export EQF_PY="$ROOT/.venv/bin/python"
-# $ROOT/python -> triton (this checkout, wins over beta's .pth);
-# $ROOT/tv     -> makes the `eq_fuzzing` package importable;
-# $BETA_SP     -> torch + numpy.
-export PYTHONPATH="$ROOT/python:$ROOT/tv:$BETA_SP"
+export EQF_PY="$TRITON_ROOT/.venv/bin/python"
+# $TRITON_ROOT/python -> triton (that checkout, wins over beta's .pth);
+# $TILE_SMT_ROOT      -> makes the `eq_fuzzing` package importable;
+# $BETA_SP            -> torch + numpy.
+export PYTHONPATH="$TRITON_ROOT/python:$TILE_SMT_ROOT:$BETA_SP"
 
 # CUDA toolchain (same archives the beta env uses)
 export TRITON_PTXAS_PATH="/home/youngzt/.triton/nvidia/nvcc/cuda_nvcc-linux-x86_64-12.9.86-archive/bin/ptxas"

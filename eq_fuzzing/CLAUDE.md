@@ -7,11 +7,10 @@ and compares outputs **bitwise**. All `R` launches match => "empirically
 equivalent". First mismatch => stop and save everything for a human to inspect.
 
 ## Where this lives
-This is `tv/eq_fuzzing/` on the `tv` branch — the empirical, GPU-runtime
-counterpart to the SMT translation validator in `tv/` (the validator proves
+`eq_fuzzing/` in the tile-smt repository — the empirical, GPU-runtime
+counterpart to the SMT translation validator here (the validator proves
 equivalence with Z3; this fuzzer checks it empirically by launching real
-kernels). Per `tv/CLAUDE.md`, all `tv/` work stays inside `tv/` and is pushed
-only to `tv` / `tv-trials`.
+kernels).
 
 It depends only on the public Triton compiler API + the `triton-opt` binary (not
 on the SMT validator code), so it stays self-contained and portable.
@@ -48,11 +47,13 @@ ttir root to ttgir with `convert-triton-to-tritongpu` first).
 
 ## Prerequisites
 - Python-only code (no rebuild for changes here). The one hard requirement is a
-  built `triton-opt` matching the installed `triton`: build the tv checkout with
-  `pip install -e . --no-build-isolation` (see `env.sh` for the CUDA/LLVM build
-  env used on this box). Build with `-j100`.
-- Binary lookup order for `triton-opt`: `$TRITON_OPT`, then `build/*/bin/triton-opt`,
-  then `python/build/*/bin/triton-opt`, then `$PATH`.
+  built `triton-opt` matching the installed `triton`: build the Triton checkout
+  with `pip install -e . --no-build-isolation` (see `env.sh` for the CUDA/LLVM
+  build env used on this box), and point `$TRITON_ROOT` at it -- the same
+  variable the CMake build uses.
+- Binary lookup order for `triton-opt`: `$TRITON_OPT`, then
+  `$TRITON_ROOT/build/*/bin/triton-opt`, then
+  `$TRITON_ROOT/python/build/*/bin/triton-opt`, then `$PATH`.
 
 ## Determinism caveats
 - Bitwise diffs from float reassociation (reduction order, FMA contraction,

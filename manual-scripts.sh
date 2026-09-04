@@ -1,8 +1,12 @@
+# Handy one-liners. Not a build system -- see README.md.
 
+# Core only (MLIR-free, needs nothing but Z3):
+cmake -S . -B build -G Ninja -DZ3_ROOT=/path/to/z3
+ninja -C build && ctest --test-dir build --output-on-failure
 
-# build triton-tv only
-ninja -C /home/zyang/triton/build/cmake.linux-x86_64-cpython-3.12 triton-tv
+# With the Triton backend, against an already-built Triton checkout:
+TRITON_ROOT=/path/to/triton cmake -S . -B build -G Ninja -DZ3_ROOT=/path/to/z3
+ninja -C build triton-tv tv-validator-tests
 
-# run triton-tv on two (required) mlir files
-build/cmake.linux-x86_64-cpython-3.12/tv/triton-tv tv/test/TTIR/source/add_kernel_unoptimized.ttir  tv/test/TTIR/source/add_kernel.ttir
-
+# Run triton-tv on two (required) mlir files:
+build/triton-tv test/TTIR/source/add_kernel_unoptimized.ttir test/TTIR/source/add_kernel.ttir

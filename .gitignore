@@ -1,1 +1,12 @@
+# Build trees
+build/
+build-*/
+compile_commands.json
+
+# Scratch IR the validator is pointed at by hand
 tmp/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

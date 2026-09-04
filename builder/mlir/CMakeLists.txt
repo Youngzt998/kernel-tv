@@ -2,17 +2,16 @@
 # Reads MLIR IR (types, ops) and drives the MLIR-free core (tile-smt) through
 # the Context builder API. Holds: dtypeOf, Env (mlir::Value -> Value), the
 # MemId-mapping + block-walk driver (State), and the standard-dialect handlers
-# (arith / math / scf). Links the core + MLIR (deliberately NOT z3-only).
+# (arith / math / scf). Links the core + the language backend.
 #
-# NOTE: State's interpretOp dispatch references the tt.* handlers declared in
-# builder/triton (handleTt*). Those symbols are provided by
-# tile-smt-builder-triton; as a static archive this library needs no resolution
-# until the final executable / test link, which links builder-triton.
-
-get_property(triton_libs GLOBAL PROPERTY TRITON_LIBS)
-
+# NOTE: despite the name this layer is not language-neutral yet — DTypeOf, Env
+# and State all reach for triton/Dialect/Triton/IR/Types.h (tt.ptr), and State's
+# interpretOp dispatch calls the tt.* handlers in builder/triton. Making it
+# neutral is a prerequisite for a second language backend; see CLAUDE.md §2.
+#
 # Compiled WITHOUT -fno-exceptions/-fno-rtti so std::throw (Env::lookup) and the
 # z3++ exceptions work normally.
+
 add_library(tile-smt-builder-mlir STATIC
   DTypeOf.cpp
   Env.cpp
@@ -20,14 +19,12 @@ add_library(tile-smt-builder-mlir STATIC
   ArithOps.cpp
 )
 
-# tv/ is the include root: code uses #include "builder/mlir/State.h",
-# "semantics/Context.h", etc.
+# The repository root is the include root: code uses
+# #include "builder/mlir/State.h", "semantics/Context.h", etc.
 target_include_directories(tile-smt-builder-mlir PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
 target_link_libraries(tile-smt-builder-mlir PUBLIC
   tile-smt          # MLIR-free core (Context / Memory / Value / AbstractFp)
-  ${triton_libs}    # Triton (+ arith/math dialects it depends on)
-  MLIRIR
-  MLIRSupport
+  tile-smt::triton  # Triton objects + MLIR (see cmake/PrebuiltTriton.cmake)
 )

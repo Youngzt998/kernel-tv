@@ -34,9 +34,9 @@ from eq_fuzzing.fuzzer import EquivalenceFuzzer
 
 CHECKPOINT_EVERY = 25
 
-# All relative paths on the command line are resolved against the triton repo
-# root (this file lives at <repo>/tv/eq_fuzzing/), so runs work from any dir.
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# All relative paths on the command line are resolved against this repository's
+# root (this file lives at <repo>/eq_fuzzing/), so runs work from any dir.
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def resolve_path(p: Optional[str]) -> Optional[str]:

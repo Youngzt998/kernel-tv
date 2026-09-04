@@ -1,8 +1,8 @@
 # tile-smt — design draft
 
 Draft for decoupling the SMT tensor semantics out of Triton into a reusable,
-IR-agnostic library. Context/goal: `tv/CLAUDE.md` §2 and
-`tv/doc/tensor-languages-survey.md`. This is a **draft** — revise as we discuss.
+IR-agnostic library. Context/goal: `CLAUDE.md` §2 and
+`doc/tensor-languages-survey.md`. This is a **draft** — revise as we discuss.
 
 ## Locked decisions (2026-07-23)
 1. **Builder API** (not a neutral IR). Each language ships an *adapter* that
@@ -31,7 +31,7 @@ IR-agnostic library. Context/goal: `tv/CLAUDE.md` §2 and
 |---|---|
 | **`tile-smt`** (hw-neutral core) | value model (`Scalar`/`Tensor`/`Ptr`), own `DType`+`Shape`, `AbstractFp` (+future Real/FPA), elementwise arith/math, structural ops (iota/splat/broadcast/reshape/expand_dims), reduce/scan (combine), dot/contract, `program_id`, abstract memory + masked windowed load/store (default = linear byte-heap+pointer), `checkEquivalence` (witness), control-flow state merge (if→ite, for→unroll) |
 | **`tile-gpu-smt`** (GPU layer; mostly future) | layouts / `convert_layout`, shared memory, warp/lane, async (TMA/mbarrier), warp specialization |
-| **triton adapter** (`tv/`, imports both) | walk `tt.func`; `Env` (`mlir::Value`→`Value`); `mlir::Value`→`MemId` map; per-op: read operands/attrs → call builder → bind result |
+| **triton adapter** (`builder/triton/`, imports both) | walk `tt.func`; `Env` (`mlir::Value`→`Value`); `mlir::Value`→`MemId` map; per-op: read operands/attrs → call builder → bind result |
 
 ## Type & value model (no MLIR types)
 ```cpp
@@ -226,7 +226,7 @@ The adapter supplies the bodies (by walking regions); the core supplies the merg
 The core (`tile-smt`, MLIR-free, Z3-only) is driven by **builders** (what earlier
 drafts called the "adapter") — one per source language — that walk that language's
 IR and model it onto the core via the `Context`/memory builder API. All builders
-live under **`tv/builder/`**:
+live under **`builder/`**:
 
 - **`builder/mlir/`** — shared tools for **all MLIR-based languages**:
   `dtypeOf(mlir::Type)→DType`, `Env` (`map<mlir::Value, Value, ValuePtrLess>`),
@@ -254,7 +254,7 @@ support, each modeling onto tile-smt (or tile-gpu-smt). Only builders touch a
 language / IR framework; the core never does.
 
 ## Migration steps (each keeps eval + unit tests green)
-1. Create `tv/semantics/` (namespace `tile_smt`) + `DType`. Move `AbstractFp`
+1. Create `semantics/` (namespace `tile_smt`) + `DType`. Move `AbstractFp`
    in, swap `mlir::FloatType`→`DType`. Add a tiny adapter shim so existing code
    compiles.
 2. Move `Memory` + value wrappers into the lib; `mlir::Type`→`DType`; introduce
@@ -262,7 +262,7 @@ language / IR framework; the core never does.
 3. Extract elementwise/structural/reduce/dot semantics from `semantics/mlir/*`
    into `Context`; handlers become thin adapters (read operands → call builder).
 4. `Env`/walking stay in adapter; `State` holds `Context`+`MemState`.
-5. Stand up `tv/tile-gpu-smt/` skeleton (near-empty today).
+5. Stand up a `tile-gpu-smt/` skeleton (near-empty today).
 
 ## Deferred / open
 - Long-term: make the access interface pluggable (memref/affine window) so

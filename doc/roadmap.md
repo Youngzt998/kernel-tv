@@ -11,7 +11,7 @@ the interfaces. (This supersedes the old M0–M4 list that used to live in
 tile-smt-goals.md.)
 
 Starting point (pre-M0): today's **working, Triton-coupled** validator in
-`tv/semantics/` (validates TTIR add/softmax; eval suite green).
+`semantics/` (validates TTIR add/softmax; eval suite green).
 
 ---
 
@@ -20,24 +20,24 @@ Starting point (pre-M0): today's **working, Triton-coupled** validator in
 ### M0 — migrate existing results onto the new plan
 Move today's Triton-coupled implementation onto the tile-smt architecture. **Two
 sides:**
-- **SMT side** — extract `tile-smt` (core) out of `tv/semantics/`: MLIR-free,
+- **SMT side** — extract `tile-smt` (core) out of `semantics/`: MLIR-free,
   own `DType`/`Shape`/`MemId`, owning Memory + AbstractFp + tile ops +
   equivalence (witness); **standalone build + unit tests with only Z3**.
 - **Triton side** — turn the current op handlers + `State`/`Env` into a thin
   **Triton adapter** that walks TTIR and calls the tile-smt builder.
 - *Done when:* the eval suite (`run_eval.py all`) is green through the adapter,
   and `tile-smt` has zero MLIR includes/symbols.
-- *Detailed split plan:* `tv/doc/m0-plan.md`.
+- *Detailed split plan:* `doc/m0-plan.md`.
 
 ### M1 — extend tile-smt to model (almost) all of Triton TTIR
 Grow the tile-smt semantic model, driven by TTIR's needs, until it cleanly models
 the vast majority of TTIR semantics.
 
 **Two kernel corpora** drive it (they are complementary, not overlapping in role):
-- `tv/benchmark/benchmark_kernels.py` — 636 **hand-written** kernels (FlagGems,
+- `benchmark/benchmark_kernels.py` — 636 **hand-written** kernels (FlagGems,
   FLA, TritonBench, torchao). Complex: attention, linear attention, quantized
   GEMM, nested loops. Source of the *hard* features → drives M1-complete.
-- `tv/benchmark/inductor_kernels.py` — **TorchInductor-generated** kernels
+- `benchmark/inductor_kernels.py` — **TorchInductor-generated** kernels
   (`torch.compile`). Regular: fused pointwise + reduction, template-produced,
   and generatable in unlimited quantity. Source of *breadth* → drives M1-MVP.
   Also the highest-value bug target: it is the most-executed Triton code there

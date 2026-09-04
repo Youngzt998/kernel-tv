@@ -39,7 +39,7 @@ needs. This is the same mechanism as loop `summarize` mode (`roadmap.md` §M1) �
 not a separate machine.
 
 **The hook already exists in the code** but was never wired up
-(`tv/semantics/AbstractFp.cpp`, `getDotFn`):
+(`semantics/AbstractFp.cpp`, `getDotFn`):
 
 ```cpp
 z3::sort arr = ctx.array_sort(ctx.bv_sort(32), sort());
@@ -188,7 +188,7 @@ analysis, the FP-profile diagnostic, the measured corpus data).
 | 5 | S. Verdoolaege, G. Janssens, M. Bruynooghe. *Equivalence Checking of Static Affine Programs Using Widening to Handle Recurrences.* CAV 2009; extended in ACM TOPLAS 2012. | **closest prior work overall**: exact index reasoning + uninterpreted operators + recurrences (§7) | medium |
 | 6 | P. Daca, T. A. Henzinger, A. Kupriyanov. *Array Folds Logic.* CAV 2016. | aggregates/folds over arrays as first-class terms (§2) | medium-low (year uncertain) |
 | 7 | Z. Kincaid, J. Breck, A. F. Boroujeni, T. Reps. *Compositional Recurrence Analysis* (FMCAD 2015) and *Non-linear Reasoning for Invariant Synthesis* (POPL 2018). | recurrence-based loop summaries (§2, §6) | medium |
-| 8 | N. P. Lopes, J. Lee, C.-K. Hur, Z. Liu, J. Regehr. *Alive2: Bounded Translation Validation for LLVM.* PLDI 2021. | the comparable tool; see `tv/doc/kb/alive2-loops.md` | high (title verified from the repo README) |
+| 8 | N. P. Lopes, J. Lee, C.-K. Hur, Z. Liu, J. Regehr. *Alive2: Bounded Translation Validation for LLVM.* PLDI 2021. | the comparable tool; see `doc/kb/alive2-loops.md` | high (title verified from the repo README) |
 | 9 | D. Menendez, S. Nagarakatte, A. Gupta. *Alive-FP: Automated Verification of Floating Point Based Peephole Optimizations in LLVM.* SAS 2016. | prior work on FP semantics in a translation validator (§8) | medium |
 | 10 | L. de Moura, N. Bjørner. *Z3: An Efficient SMT Solver.* TACAS 2008. | the solver; congruence closure, lambdas | high |
 | 11 | Y. Ge, L. de Moura. *Complete Instantiation for Quantified Formulas in Satisfiability Modulo Theories.* CAV 2009. | how the recurrence axioms get instantiated (§2) | medium |

@@ -1,4 +1,7 @@
-#include "../../bin/RegisterTritonDialects.h"
+// Triton's dialect + pass registration, from whichever Triton this build points
+// at: cmake/PrebuiltTriton.cmake puts TRITON_ROOT on the include path. Upstream
+// and the Meta fork both ship this header; the fork also registers tlx.
+#include "bin/RegisterTritonDialects.h"
 
 #include "builder/mlir/State.h"
 #include "semantics/Equivalence.h"

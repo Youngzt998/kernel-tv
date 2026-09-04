@@ -2,37 +2,40 @@
 
 Fuzzer-based check of Triton **compilation correctness**: compare two
 compilations of the same kernel on many random inputs, bitwise. Lives at
-`tv/eq_fuzzing/` — the empirical GPU counterpart to the SMT translation
-validator in `tv/`.
+`eq_fuzzing/` — the empirical GPU counterpart to the SMT translation
+validator in this repository.
 
 ## Setup (once)
-Build the tv checkout so `import triton` and `triton-opt` come from it:
+Build the Triton checkout so `import triton` and `triton-opt` come from it, and
+point `$TRITON_ROOT` at it -- the same variable the CMake build uses:
 
 ```bash
-cd /home/youngzt/tv/triton
-pip install -e . --no-build-isolation      # build in parallel (-j100)
+export TRITON_ROOT=/path/to/triton
+cd "$TRITON_ROOT"
+pip install -e . --no-build-isolation      # parallelise with MAX_JOBS=<ncpu>
 ```
 
 (See `env.sh` for the exact CUDA/LLVM env used on this box.)
 
 ## Run
-Command-line paths are relative to the **triton repo root**, so you can run from
-any directory. `env.sh` sets up the interpreter, PYTHONPATH, and CUDA tools.
+Command-line paths are relative to **this repository's root**, so you can run
+from any directory. `env.sh` sets up the interpreter, PYTHONPATH, and CUDA
+tools; it needs `$TRITON_ROOT` set before you source it.
 
 ```bash
-source tv/eq_fuzzing/env.sh   # sets $EQF_PY, PYTHONPATH, CUDA tool paths
+source eq_fuzzing/env.sh   # sets $EQF_PY, PYTHONPATH, CUDA tool paths
 
 # TTGIR: does an optimization pipeline change results vs the unoptimized root?
 "$EQF_PY" -m eq_fuzzing.runner \
   --level ttgir --mode candidate-vs-reference \
-  --kernels tv/eq_fuzzing/kernels/basic.py \
-  --passes tv/eq_fuzzing/passes/ttgir_opt.txt \
+  --kernels eq_fuzzing/kernels/basic.py \
+  --passes eq_fuzzing/passes/ttgir_opt.txt \
   -R 200 --target cuda:90 \
-  --checkpoint tv/eq_fuzzing/checkpoints/ttgir.json
+  --checkpoint eq_fuzzing/checkpoints/ttgir.json
 ```
 
 `-R N` = number of random launches required to declare equivalence.
-`--kernels` defaults to `tv/eq_fuzzing/kernels/basic.py` if omitted.
+`--kernels` defaults to `eq_fuzzing/kernels/basic.py` if omitted.
 
 ### Modes
 - `candidate-vs-reference` (default): candidate pipeline (`--passes`) vs the
@@ -59,7 +62,7 @@ exact sequence.
 
 ## When a mismatch is found
 The run stops (unless `--keep-going`) and writes, under `--out-dir`
-(default `tv/eq_fuzzing/inequiv/<kernel>__<task>/`):
+(default `eq_fuzzing/inequiv/<kernel>__<task>/`):
 `ref.ttgir`, `cand.ttgir`, `input.pt`, `out_ref.pt`, `out_cand.pt`, `meta.json`.
 Load them to see which pass/option changed the numerics.
 
@@ -69,8 +72,8 @@ Example self-check (expects a mismatch on matmul from tf32 tensor cores):
 "$EQF_PY" -m eq_fuzzing.runner \
   --level ttgir --mode candidate-vs-reference \
   --only matmul \
-  --passes tv/eq_fuzzing/passes/ttgir_matmul_tf32.txt \
-  -R 50 --checkpoint tv/eq_fuzzing/checkpoints/mm.json
+  --passes eq_fuzzing/passes/ttgir_matmul_tf32.txt \
+  -R 50 --checkpoint eq_fuzzing/checkpoints/mm.json
 ```
 
 ## Add your own kernels

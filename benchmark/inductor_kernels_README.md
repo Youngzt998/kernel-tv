@@ -137,8 +137,8 @@ is kept, and the block says how many captured kernels it stands for.
 
 ```bash
 source /home/youngzt/tv/triton/.venv/bin/activate
-python3 -m py_compile tv/benchmark/inductor_kernels.py
-python3 -c "import importlib.util as u; s=u.spec_from_file_location('ik','tv/benchmark/inductor_kernels.py'); m=u.module_from_spec(s); s.loader.exec_module(m); print(len(m.INDUCTOR_KERNELS))"
+python3 -m py_compile benchmark/inductor_kernels.py
+python3 -c "import importlib.util as u; s=u.spec_from_file_location('ik','benchmark/inductor_kernels.py'); m=u.module_from_spec(s); s.loader.exec_module(m); print(len(m.INDUCTOR_KERNELS))"
 ```
 
 Both pass in the `tv` venv, which has **no torch**: the `@triton.jit` helpers

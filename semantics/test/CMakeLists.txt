@@ -1,6 +1,6 @@
 # Z3-only unit tests for the tile-smt core. Each test links ONLY `tile-smt`
-# (which brings the tv/ include root + Z3); NO MLIR/Triton. Grouped under the
-# `tile-smt-tests` build target and registered with CTest.
+# (which brings the repository include root + Z3); NO MLIR/Triton. Grouped
+# under the `tile-smt-tests` build target and registered with CTest.
 
 if(NOT TARGET tile-smt-tests)
   add_custom_target(tile-smt-tests)

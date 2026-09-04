@@ -1,1 +1,0 @@
-Translation Validator for Triton's compiler

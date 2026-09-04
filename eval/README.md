@@ -4,11 +4,11 @@ Automated evaluation for the `triton-tv` translation validator. One Python
 runner drives the built binary over three kinds of evaluation, one per folder.
 
 ```bash
-python tv/eval/run_eval.py pairs            # curated pairs gate
-python tv/eval/run_eval.py inequal          # inequality-detection gate
-python tv/eval/run_eval.py compile-options  # unopt-vs-variant gate
-python tv/eval/run_eval.py solver-cost      # timing report
-python tv/eval/run_eval.py all              # gates, then the report
+python eval/run_eval.py pairs            # curated pairs gate
+python eval/run_eval.py inequal          # inequality-detection gate
+python eval/run_eval.py compile-options  # unopt-vs-variant gate
+python eval/run_eval.py solver-cost      # timing report
+python eval/run_eval.py all              # gates, then the report
 ```
 
 The runner finds the binary automatically (the same build dir the Triton build
@@ -64,7 +64,7 @@ observable behavior. A `NEQ`/`UNKNOWN` here is a real finding.
 **Add a kernel:** generate its folder from a Triton kernel script:
 
 ```bash
-python tv/eval/compile-options/generate.py python/tutorials/01-vector-add.py
+python eval/compile-options/generate.py python/tutorials/01-vector-add.py
 ```
 
 This dumps the unoptimized `standard.ttir` and runs `triton-opt` pass pipelines
