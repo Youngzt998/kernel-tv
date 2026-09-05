@@ -27,4 +27,9 @@ target_include_directories(tile-smt-builder-mlir PUBLIC
 target_link_libraries(tile-smt-builder-mlir PUBLIC
   tile-smt          # MLIR-free core (Context / Memory / Value / AbstractFp)
   tile-smt::triton  # Triton objects + MLIR (see cmake/PrebuiltTriton.cmake)
+  # Cyclic on purpose, and it is the same coupling the NOTE above describes:
+  # State::interpretOp calls handleTt*, which lives in builder/triton, which in
+  # turn is built on State. Declaring the cycle is what makes CMake repeat both
+  # archives on the link line; without it handleTt* comes out undefined.
+  tile-smt-builder-triton
 )

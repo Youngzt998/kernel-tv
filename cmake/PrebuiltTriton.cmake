@@ -140,6 +140,17 @@ endif()
 # triton-opt's own translation unit defines main(); ours does.
 list(FILTER _tt_objs EXCLUDE REGEX "/triton-opt\\.cpp\\.o$")
 list(REMOVE_DUPLICATES _tt_objs)
+
+# Split the harvest: a sources list only understands .o (CMake tags those as
+# external objects), and silently drops a .a. Archives have to be linked, and
+# they have to come after the objects that reference them, which is what
+# INTERFACE link libraries give us. Keep only Triton's own archives here --
+# LLVM's arrive properly ordered through the MLIR targets below.
+set(_tt_archives "${_tt_objs}")
+list(FILTER _tt_objs EXCLUDE REGEX "\\.a$")
+list(FILTER _tt_archives INCLUDE REGEX "\\.a$")
+list(FILTER _tt_archives INCLUDE REGEX "^${TRITON_BUILD_DIR}/")
+
 list(LENGTH _tt_objs _tt_count)
 
 # Triton is ~300 translation units. A handful means we found the wrong thing,
@@ -151,7 +162,9 @@ if(_tt_count LESS 50)
     "(via ${_tt_how}). Expected a few hundred. Is Triton actually built? "
     "If the build tree is unusual, pass the list as -DTILE_SMT_TRITON_OBJECTS=...")
 endif()
-message(STATUS "tile-smt:   ${_tt_count} Triton link inputs (${_tt_how})")
+list(LENGTH _tt_archives _tt_archive_count)
+message(STATUS
+  "tile-smt:   ${_tt_count} Triton objects + ${_tt_archive_count} archives (${_tt_how})")
 
 # --- The backend target ------------------------------------------------------
 # INTERFACE sources re-expose the harvested objects the same way Triton's OBJECT
@@ -162,7 +175,21 @@ add_library(tile-smt::triton ALIAS tile-smt-triton)
 
 target_sources(tile-smt-triton INTERFACE ${_tt_objs})
 
+# Take the include path off triton-opt too, for the same reason we take its
+# objects: each backend adds directories of its own (the AMD passes need
+# third_party/amd/include for their TableGen output, and the Meta fork adds tlx
+# the same way), and those rode on CMake targets we are not importing. The
+# explicit entries below are the ones we rely on by name, as a floor in case the
+# build tree cannot be read.
+tile_smt_ninja_includes("${TRITON_BUILD_DIR}"
+  "bin/CMakeFiles/triton-opt.dir/triton-opt.cpp.o" _tt_includes)
+if(_tt_includes)
+  list(LENGTH _tt_includes _tt_inc_count)
+  message(STATUS "tile-smt:   ${_tt_inc_count} include dirs (from triton-opt)")
+endif()
+
 target_include_directories(tile-smt-triton SYSTEM INTERFACE
+  ${_tt_includes}
   ${TRITON_ROOT}                      # "bin/RegisterTritonDialects.h"
   ${TRITON_ROOT}/include              # "triton/Dialect/..."
   ${TRITON_BUILD_DIR}/include         # TableGen'd *.h.inc
@@ -182,7 +209,23 @@ target_compile_definitions(tile-smt-triton INTERFACE ${_llvm_defs})
 target_compile_options(tile-smt-triton INTERFACE
   -D__STDC_FORMAT_MACROS -fPIC -fvisibility=hidden)
 
+# LLVM is normally built without RTTI or exceptions, and a translation unit that
+# instantiates its templates (llvm::cl::opt, say) must agree or the link fails
+# on a missing typeinfo. Triton spells this TRITON_DISABLE_EH_RTTI_FLAGS and
+# applies it to tools but not to code that needs to throw; we read the setting
+# off the LLVM we found instead of hardcoding it, and expose it for the few
+# targets that want it. The builder layer deliberately does NOT use it: it
+# throws (Env::lookup) and z3++ throws.
+set(TILE_SMT_NO_EH_RTTI_FLAGS "")
+if(NOT LLVM_ENABLE_RTTI)
+  list(APPEND TILE_SMT_NO_EH_RTTI_FLAGS -fno-rtti)
+endif()
+if(NOT LLVM_ENABLE_EH)
+  list(APPEND TILE_SMT_NO_EH_RTTI_FLAGS -fno-exceptions)
+endif()
+
 target_link_libraries(tile-smt-triton INTERFACE
+  ${_tt_archives}   # libTritonTest*.a -- RegisterTritonDialects.h registers them
   MLIRIR
   MLIRPass
   MLIRParser

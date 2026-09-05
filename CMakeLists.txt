@@ -124,6 +124,9 @@ add_subdirectory(builder/triton)
 # triton-tv binary
 # ---------------------------------------------------------------------------
 add_executable(triton-tv bin/triton-tv.cpp)
+# This TU instantiates llvm::cl templates, so it has to agree with how LLVM was
+# built about RTTI/exceptions (see cmake/PrebuiltTriton.cmake).
+target_compile_options(triton-tv PRIVATE ${TILE_SMT_NO_EH_RTTI_FLAGS})
 target_link_libraries(triton-tv PRIVATE tile-smt-builder-triton)
 tile_smt_link_z3(triton-tv PRIVATE)
 mlir_check_all_link_libraries(triton-tv)

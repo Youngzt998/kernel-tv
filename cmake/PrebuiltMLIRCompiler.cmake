@@ -60,3 +60,52 @@ macro(tile_smt_find_mlir llvm_syspath)
   include(AddLLVM)
   include(AddMLIR)
 endmacro()
+
+# tile_smt_ninja_includes(<build-dir> <object-path> <out-var>)
+#
+# Recover the include path a Ninja build tree actually compiles one object with.
+#
+# Harvesting object files loses the INTERFACE include directories their CMake
+# targets carried, and those matter: a backend's TableGen output lands in its
+# own tree (Triton's AMD passes include "TritonAMDGPUTransforms/Passes.h.inc",
+# which only resolves through third_party/amd/include). Rather than hardcode a
+# list that goes stale as backends come and go, read what the build itself uses.
+#
+# CMake gives every object edge its own indented `INCLUDES =` line, so filter
+# the file down to the build statements we care about plus every INCLUDES line,
+# in order, and take the first INCLUDES after our object's statement.
+function(tile_smt_ninja_includes build_dir object out_var)
+  set(${out_var} "" PARENT_SCOPE)
+  set(_ninja_file "${build_dir}/build.ninja")
+  if(NOT EXISTS "${_ninja_file}")
+    return()
+  endif()
+
+  string(REGEX REPLACE "([.+*?^$()])" "\\\\\\1" _obj_re "${object}")
+  file(STRINGS "${_ninja_file}" _lines REGEX "^build ${_obj_re}:|^ +INCLUDES = ")
+
+  set(_armed OFF)
+  foreach(_line IN LISTS _lines)
+    if(_line MATCHES "^build ")
+      set(_armed ON)
+    elseif(_armed)
+      set(_dirs "")
+      # -I<dir>, -I <dir> and -isystem <dir>, quoted or bare.
+      string(REGEX MATCHALL "-(I|isystem) *(\"[^\"]+\"|[^ ]+)" _flags "${_line}")
+      foreach(_flag IN LISTS _flags)
+        string(REGEX REPLACE "^-(I|isystem) *" "" _dir "${_flag}")
+        string(REPLACE "\"" "" _dir "${_dir}")
+        if(NOT IS_ABSOLUTE "${_dir}")
+          set(_dir "${build_dir}/${_dir}")
+        endif()
+        get_filename_component(_dir "${_dir}" ABSOLUTE)
+        if(IS_DIRECTORY "${_dir}")
+          list(APPEND _dirs "${_dir}")
+        endif()
+      endforeach()
+      list(REMOVE_DUPLICATES _dirs)
+      set(${out_var} "${_dirs}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+endfunction()
