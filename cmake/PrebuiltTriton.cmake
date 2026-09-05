@@ -72,6 +72,13 @@ if(NOT LLVM_SYSPATH)
 endif()
 
 kernel_smt_find_mlir("${LLVM_SYSPATH}")
+# The object list and include path below are read out of the build tree at
+# configure time, so they go stale the moment Triton is rebuilt with different
+# sources. Re-run CMake when that happens instead of failing at link time with
+# a missing object.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+             "${TRITON_BUILD_DIR}/build.ninja")
+
 message(STATUS "kernel-smt: Triton backend from ${TRITON_ROOT}")
 message(STATUS "kernel-smt:   build tree ${TRITON_BUILD_DIR}")
 message(STATUS "kernel-smt:   MLIR ${MLIR_DIR} (LLVM ${LLVM_PACKAGE_VERSION})")

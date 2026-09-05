@@ -67,6 +67,20 @@ out of the build tree, and that is what `cmake/PrebuiltTriton.cmake` harvests â€
 it reads them off `bin/triton-opt`, whose link set is exactly the one
 `triton-tv` needs.
 
+### Portability
+
+Nothing in the build is tied to one machine. `TRITON_ROOT` and `Z3_ROOT` are
+supplied per checkout; the build tree, `LLVM_SYSPATH` and the include path are
+all read off the Triton build you point at, on the machine you are on. The
+harvested object paths are absolute, but they live only in your own build
+directory, which is never committed -- and a Triton rebuild re-triggers CMake,
+so the harvest cannot go stale behind your back.
+
+`eq_fuzzing/env.sh` is the one script that needs anything else, because it has
+to find a torch and the CUDA tools: it derives what it can from `TRITON_ROOT`
+and Triton's own cache, and takes `EQF_PY`, `EQF_EXTRA_SITE_PACKAGES` and
+`TRITON_CACHE_DIR` for the rest.
+
 ### Z3
 
 Z3 **4.8.12 or newer** â€” `semantics/Context.cpp` uses `z3::sgt` / `z3::sge`,
