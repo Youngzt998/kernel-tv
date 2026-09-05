@@ -2,9 +2,9 @@
 
 #include <stdexcept>
 
-// Core (tile-smt) — MLIR-free: use std exceptions instead of llvm_unreachable.
+// Core (kernel-smt) — MLIR-free: use std exceptions instead of llvm_unreachable.
 
-using namespace tile_smt;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // AbstractFp

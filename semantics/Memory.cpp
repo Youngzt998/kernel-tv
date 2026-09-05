@@ -5,7 +5,7 @@
 // Core must stay free of MLIR/LLVM: switch on the neutral DType and use std
 // exceptions instead of llvm_unreachable.
 
-using namespace tile_smt;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // Internal helpers

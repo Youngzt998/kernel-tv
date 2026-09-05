@@ -1,5 +1,5 @@
-// Z3-only unit tests for the tile-smt core Context (the builder API). NO MLIR:
-// every op is driven through neutral tile_smt types, proving Context builds and
+// Z3-only unit tests for the kernel-smt core Context (the builder API). NO MLIR:
+// every op is driven through neutral kernel_smt types, proving Context builds and
 // runs without any MLIR present. Op-expression bodies were lifted verbatim from
 // the pre-M0 handlers; these tests check the resulting Z3 semantics.
 
@@ -11,7 +11,7 @@
 #include <array>
 #include <z3++.h>
 
-using namespace tile_smt;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // Small helpers

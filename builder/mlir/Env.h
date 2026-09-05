@@ -15,15 +15,15 @@
 
 namespace Semantics {
 
-// Builder-side value model uses the tile-smt core value types directly.
-using tile_smt::Context;
-using tile_smt::DType;
-using tile_smt::FPMode;
-using tile_smt::MemId;
-using tile_smt::Ptr;
-using tile_smt::Scalar;
-using tile_smt::Tensor;
-using tile_smt::Value;
+// Builder-side value model uses the kernel-smt core value types directly.
+using kernel_smt::Context;
+using kernel_smt::DType;
+using kernel_smt::FPMode;
+using kernel_smt::MemId;
+using kernel_smt::Ptr;
+using kernel_smt::Scalar;
+using kernel_smt::Tensor;
+using kernel_smt::Value;
 
 // Pointer comparator for mlir::Value so it can be used as a std::map key.
 // mlir::Value is not default-constructible, so llvm::DenseMap is not usable

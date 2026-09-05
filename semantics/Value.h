@@ -1,11 +1,11 @@
-#ifndef TILE_SMT_VALUE_H
-#define TILE_SMT_VALUE_H
+#ifndef KERNEL_SMT_VALUE_H
+#define KERNEL_SMT_VALUE_H
 
-// tile-smt core — value wrappers for encoded SSA values.
+// kernel-smt core — value wrappers for encoded SSA values.
 //
 // A source value (scalar, tensor, or pointer) is encoded as one of these three
-// Z3-backed structs. They are MLIR-free: types are the neutral tile_smt::DType,
-// and pointer provenance is the opaque tile_smt::MemId (a builder maps its own
+// Z3-backed structs. They are MLIR-free: types are the neutral kernel_smt::DType,
+// and pointer provenance is the opaque kernel_smt::MemId (a builder maps its own
 // source IR types / provenance onto these).
 //
 // These replace the old Semantics::Z3Scalar / Z3Tile / Z3Ptr, swapping the
@@ -24,7 +24,7 @@
 #include <variant>
 #include <z3++.h>
 
-namespace tile_smt {
+namespace kernel_smt {
 
 // A scalar value encoded as a Z3 expression.
 struct Scalar {
@@ -57,6 +57,6 @@ struct Ptr {
 
 using Value = std::variant<Scalar, Tensor, Ptr>;
 
-} // namespace tile_smt
+} // namespace kernel_smt
 
-#endif // TILE_SMT_VALUE_H
+#endif // KERNEL_SMT_VALUE_H

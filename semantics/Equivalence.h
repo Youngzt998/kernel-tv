@@ -1,8 +1,8 @@
-#ifndef TILE_SMT_EQUIVALENCE_H
-#define TILE_SMT_EQUIVALENCE_H
+#ifndef KERNEL_SMT_EQUIVALENCE_H
+#define KERNEL_SMT_EQUIVALENCE_H
 
-// tile-smt core — final-memory equivalence check.
-// MLIR-free: depends only on Z3 and the tile-smt neutral types (MemState /
+// kernel-smt core — final-memory equivalence check.
+// MLIR-free: depends only on Z3 and the kernel-smt neutral types (MemState /
 // MemId). The witness / lambda SMT encoding is preserved byte-for-byte from the
 // pre-M0 Triton-coupled implementation, so verdicts/timing do not change.
 
@@ -13,7 +13,7 @@
 #include <vector>
 #include <z3++.h>
 
-namespace tile_smt {
+namespace kernel_smt {
 
 // Check semantic equivalence of two final memory states.
 //
@@ -37,6 +37,6 @@ checkEquivalence(const MemState &s1, const MemState &s2,
                  const std::vector<std::pair<MemId, MemId>> &pairing,
                  z3::solver &solver);
 
-} // namespace tile_smt
+} // namespace kernel_smt
 
-#endif // TILE_SMT_EQUIVALENCE_H
+#endif // KERNEL_SMT_EQUIVALENCE_H

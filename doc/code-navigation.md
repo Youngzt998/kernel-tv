@@ -1,7 +1,7 @@
 # tv Code Navigation Guide
 
 A map for inspecting the post-M0 code: the MLIR-free **core** (`semantics/`,
-namespace `tile_smt`) and the **builders** (`builder/`, namespace
+namespace `kernel_smt`) and the **builders** (`builder/`, namespace
 `Semantics`). ~2.8k lines of implementation (+~1.1k tests). Line numbers are
 anchors — jump by symbol name if a line has drifted.
 
@@ -16,14 +16,14 @@ builder/  (namespace Semantics)   walks mlir::Operation, reads MLIR types/attrs,
    triton/  TritonOps  (tt.*)
    │  depends on
    ▼
-semantics/  (namespace tile_smt)  pure Z3 op semantics — NO MLIR
+semantics/  (namespace kernel_smt)  pure Z3 op semantics — NO MLIR
    Types · Value · AbstractFp · Memory · Context · Equivalence
    │
    ▼
    z3
 ```
 
-Rule: **core includes no MLIR/Triton**. Verify: `grep -rE 'mlir::|triton::|#include "mlir' semantics/` is empty; `libtile-smt.a` links z3 only.
+Rule: **core includes no MLIR/Triton**. Verify: `grep -rE 'mlir::|triton::|#include "mlir' semantics/` is empty; `libkernel-smt.a` links z3 only.
 
 ## 1. Recommended reading order (shallow → deep, core before builder)
 
@@ -52,7 +52,7 @@ Rule: **core includes no MLIR/Triton**. Verify: `grep -rE 'mlir::|triton::|#incl
 
 | Invariant | Where | Verify |
 |---|---|---|
-| **MLIR-free core** | `semantics/` | `grep -rE 'mlir::\|triton::\|#include "mlir' semantics/` empty; `ar t libtile-smt.a` = core .o only |
+| **MLIR-free core** | `semantics/` | `grep -rE 'mlir::\|triton::\|#include "mlir' semantics/` empty; `ar t libkernel-smt.a` = core .o only |
 | **Single-lambda store** (perf) | `Memory.cpp` `store` | one lambda per masked-tile store (not an n×byteWidth chain); lanes ascending → last-writer-wins |
 | **Witness equivalence** (decidability) | `Equivalence.cpp` + store | uses `select(lambda, witness)`, never `array != array` |
 | **FP soundness boundary** (audit this) | `AbstractFp.cpp` `addAxioms` | which axioms exist (5) vs deliberately absent (assoc / NaN / zero-identity) — could a missing law make a pass falsely (in)equivalent? |

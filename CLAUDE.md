@@ -1,10 +1,10 @@
-# CLAUDE.md — tile-smt
+# CLAUDE.md — kernel-smt
 
-> **Scope.** Guidance for working on this repository: the tile-smt translation
+> **Scope.** Guidance for working on this repository: the kernel-smt translation
 > validator.
 > **Language.** Chat/explanations in Chinese; keep **all code, comments, commit
 > messages, and docs (including this file) in English**.
-> **History.** tile-smt lived as `tv/` inside a Triton checkout until it was
+> **History.** kernel-smt lived as `tv/` inside a Triton checkout until it was
 > split out into its own repository (2026-09-04); paths in the archival
 > documents below still carry that `tv/` prefix. The old, Triton-only version of
 > this file is `CLAUDE.legacy.md` (SUPERSEDED — do not follow it).
@@ -20,7 +20,7 @@ counterexample), `2` = UNKNOWN. Today it validates **Triton TTIR** (add_kernel,
 softmax) at realistic sizes.
 
 **M0 is DONE.** The code is split into an MLIR-free core + per-language builders
-(§6). Verified: core has zero MLIR, `libtile-smt.a` links only Z3, all unit tests
+(§6). Verified: core has zero MLIR, `libkernel-smt.a` links only Z3, all unit tests
 and the eval suite green.
 
 **Current design facts (accurate — trust these over any older doc):**
@@ -66,20 +66,20 @@ and the eval suite green.
 parts of it are still Triton-shaped — e.g. `addPtr`/`splatPtr` are *pointer-level*
 addressing, not abstract tensor ops (memref/TPU languages don't address by
 pointer). Generalizing the op set along the lines above is M1 work. See
-`doc/tile-smt-design.md` §"Abstract tensor operation set".
+`doc/kernel-smt-design.md` §"Abstract tensor operation set".
 
 **Near-term north star:** ship a complete implementation on **Triton** and use it
 to **find & reproduce a real Triton compilation bug**.
 
 The library split:
-- **`tile-smt`** — hardware-neutral core (the abstract tensor semantics above).
-- **`tile-gpu-smt`** — GPU/SIMT layer (M2): layouts/`convert_layout`, shared
+- **`kernel-smt`** — hardware-neutral core (the abstract tensor semantics above).
+- **`kernel-gpu-smt`** — GPU/SIMT layer (M2): layouts/`convert_layout`, shared
   memory, warp/lane, async TMA/mbarrier, warp specialization.
-- **(future) `tile-accel-smt`** — TPU/Mosaic + Trainium/NKI; **one layer covers
+- **(future) `kernel-accel-smt`** — TPU/Mosaic + Trainium/NKI; **one layer covers
   both**.
 
-Full goals + success criteria: `doc/tile-smt-goals.md`. Interfaces:
-`doc/tile-smt-design.md`. Numbered plan: `doc/roadmap.md`.
+Full goals + success criteria: `doc/kernel-smt-goals.md`. Interfaces:
+`doc/kernel-smt-design.md`. Numbered plan: `doc/roadmap.md`.
 
 **Locked decisions:** Builder API (adapter calls the lib; no neutral IR);
 incremental access model (linear byte-heap + pointer, abstract enough to swap for
@@ -90,7 +90,7 @@ vs reassoc-allowed); **loop model** `--loop-model=unroll|summarize|auto` (§7).
 ## 3. Development rules
 
 - 🔴 **Never write into the Triton checkout.** `$TRITON_ROOT` names a build we
-  only consume; treat it as read-only. Everything tile-smt needs lives in this
+  only consume; treat it as read-only. Everything kernel-smt needs lives in this
   repository — if something looks like it needs a Triton change, that is a
   design problem here.
 - **How the Triton dependency works.** Triton's core is CMake OBJECT libraries
@@ -116,7 +116,7 @@ C++ changes require a rebuild. Full instructions and the Z3 requirement
 ```bash
 # core only — fast, no MLIR
 cmake -S . -B build -G Ninja -DZ3_ROOT=<z3>
-ninja -C build tile-smt tile-smt-tests
+ninja -C build kernel-smt kernel-smt-tests
 
 # full — needs an already-built Triton checkout; the triton-tv link is slow
 TRITON_ROOT=<triton> cmake -S . -B build -G Ninja -DZ3_ROOT=<z3>
@@ -126,7 +126,7 @@ ninja -C build triton-tv tv-validator-tests
 ## 5. Testing
 
 **Unit tests.** Two groups:
-- **core (Z3-only, no MLIR)** — `ctest --test-dir build -R TileSmt` (5 tests:
+- **core (Z3-only, no MLIR)** — `ctest --test-dir build -R KernelSmt` (5 tests:
   Types, AbstractFp, Memory, Context, Equivalence).
 - **builder (needs MLIR)** — `ctest --test-dir build -R TestTritonTV` (Env, State).
 
@@ -158,7 +158,7 @@ IR you are validating — pin it explicitly when it matters.
 ## 6. Where things are
 
 ```
-semantics/     CORE `tile-smt` — MLIR-free, links ONLY z3 (namespace tile_smt)
+semantics/     CORE `kernel-smt` — MLIR-free, links ONLY z3 (namespace kernel_smt)
                Types · Value · AbstractFp · Memory · Context · Equivalence
   test/        Z3-only unit tests (SimpleTest.h harness)
 builder/       per-language builders — the ONLY place that includes MLIR
@@ -173,7 +173,7 @@ eval/          pairs/ inequal/ compile-options/ solver-cost/ run_eval.py
                permute_passes.py
 eq_fuzzing/    equivalence fuzzer driving triton-opt
 benchmark/     benchmark_kernels.py — 420+ collected @triton.jit kernels
-doc/           roadmap.md · tile-smt-goals.md · tile-smt-design.md ·
+doc/           roadmap.md · kernel-smt-goals.md · kernel-smt-design.md ·
                m0-plan.md · code-navigation.md · tensor-languages-survey.md
   kb/          knowledge base on external tools — REFERENCE, NOT plans
                (alive2-loops.md). Nothing in kb/ is an adopted decision.

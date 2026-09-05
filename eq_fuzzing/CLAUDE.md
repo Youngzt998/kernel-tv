@@ -7,7 +7,7 @@ and compares outputs **bitwise**. All `R` launches match => "empirically
 equivalent". First mismatch => stop and save everything for a human to inspect.
 
 ## Where this lives
-`eq_fuzzing/` in the tile-smt repository — the empirical, GPU-runtime
+`eq_fuzzing/` in the kernel-smt repository — the empirical, GPU-runtime
 counterpart to the SMT translation validator here (the validator proves
 equivalence with Z3; this fuzzer checks it empirically by launching real
 kernels).

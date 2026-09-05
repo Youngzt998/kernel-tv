@@ -1,10 +1,10 @@
-# tile-smt — project goals (refined)
+# kernel-smt — project goals (refined)
 
 High-level goals/vision for the refactor. Interface details live in
-`doc/tile-smt-design.md`; cross-language evidence in
+`doc/kernel-smt-design.md`; cross-language evidence in
 `doc/tensor-languages-survey.md`. This is a **draft** — revise as we discuss.
 
-## 1. What tile-smt is
+## 1. What kernel-smt is
 
 A **standalone, pure SMT abstract semantic model** for tile/tensor kernel
 programs, plus a **builder API**. It is independent of:
@@ -14,7 +14,7 @@ programs, plus a **builder API**. It is independent of:
 - (as far as possible) any **hardware**.
 
 A language models its semantics by writing a thin **adapter** that walks its own
-IR and calls the tile-smt builder. tile-smt encodes that into Z3 and answers
+IR and calls the kernel-smt builder. kernel-smt encodes that into Z3 and answers
 semantic questions — primarily **equivalence** (translation validation).
 
 **Near-term north star (first deliverable).** First ship a *complete*
@@ -25,11 +25,11 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
 
 ## 2. Non-negotiables — what "MLIR-independent" means concretely
 
-1. tile-smt source includes **no MLIR / Triton / TVM headers** — only Z3 + the
+1. kernel-smt source includes **no MLIR / Triton / TVM headers** — only Z3 + the
    C++ standard library.
-2. tile-smt **builds and its unit tests run standalone**, with **only Z3** as a
+2. kernel-smt **builds and its unit tests run standalone**, with **only Z3** as a
    dependency (its own CMake target; tests do not need MLIR or Triton).
-   *Checkable:* no `mlir::` symbols in tile-smt objects; it does not link MLIR.
+   *Checkable:* no `mlir::` symbols in kernel-smt objects; it does not link MLIR.
 3. Every builder parameter is a **neutral type** — `DType`, `Shape`, `MemId`, Z3
    handles, combine callbacks — **never** `mlir::Value/Type/Operation` or any
    framework type. (This is why pointer provenance is an opaque `MemId`, not an
@@ -39,12 +39,12 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
 
 ## 3. Layered architecture
 
-- **tile-smt** (core): the model + builder + equivalence. Hardware-neutral.
-- **tile-gpu-smt**: GPU/SIMT extensions (layouts/`convert_layout`, shared memory,
+- **kernel-smt** (core): the model + builder + equivalence. Hardware-neutral.
+- **kernel-gpu-smt**: GPU/SIMT extensions (layouts/`convert_layout`, shared memory,
   warp/lane, async TMA/mbarrier, warp specialization).
-- **tile-accel-smt** (future): non-GPU "systolic + scratchpad + DMA" hardware.
+- **kernel-accel-smt** (future): non-GPU "systolic + scratchpad + DMA" hardware.
   **One such layer covers both TPU (Pallas/Mosaic) and Trainium (NKI)** — same
-  execution class: they reuse `tile-smt` for the tensor math and share this layer
+  execution class: they reuse `kernel-smt` for the tensor math and share this layer
   for on-chip tiers + DMA + systolic staging. Per-hardware details (VMEM/SBUF
   naming, `pmax`, PSUM-fp32, layouts) are absorbed as parameters / uninterpreted
   attributes the equivalence check ignores → **one parameterized layer, not two
@@ -53,15 +53,15 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
   holds while correctness = global-memory equality (verifying scratchpad
   intermediate state or cross-hardware numerics would surface differences —
   numerics belong to the FP-mode question). **Design implication:** the
-  `tile-smt` memory/access interface must leave hooks for **multiple tiers
+  `kernel-smt` memory/access interface must leave hooks for **multiple tiers
   (global/on-chip) + region access + DMA-style copy** now (even though M0 only
   implements global + linear-pointer), or this layer gets blocked later.
 - **builders** (`builder/`, one per language): `builder/mlir` (shared
   MLIR tools + `arith`/`math`/`scf`) and `builder/triton` (`tt.*` + entry) now;
   more later. A builder is thin: IR walk → core builder-API calls. Long-term goal:
-  a builder for **every** supported language, modeling onto tile-smt/tile-gpu-smt.
+  a builder for **every** supported language, modeling onto kernel-smt/kernel-gpu-smt.
 
-## 4. Capabilities tile-smt provides
+## 4. Capabilities kernel-smt provides
 
 - value/type model: `Scalar`/`Tensor`/`Ptr`; `DType`/`Shape`.
 - tensor ops: elementwise map, reduce/scan (combine), dot/contract, structural
@@ -81,7 +81,7 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
    compiler pass/pipeline is equivalent → find miscompiles.
 2. **Cross-language equivalence** (enabled by language-neutrality; longer term):
    a Triton kernel vs a TileLang/Pallas kernel meant to compute the same thing
-   both encode into the *same* tile-smt model, so they become comparable.
+   both encode into the *same* kernel-smt model, so they become comparable.
 3. **Soundness self-checks**: it must catch genuine differences (the `inequal`
    gate), not just confirm equivalences.
 
@@ -89,18 +89,18 @@ and "found & reproduced a real miscompile" is the bar for the first deliverable.
 
 Execution uses stable **M/T/V** IDs (M = major work, T = testing, V = validation
 experiments); the full plan is `doc/roadmap.md`. Summary:
-- **M0** — migrate today's Triton-coupled impl onto tile-smt: extract `tile-smt`
+- **M0** — migrate today's Triton-coupled impl onto kernel-smt: extract `kernel-smt`
   (SMT side; MLIR-free; Z3-only build+tests) + a thin **Triton adapter** (Triton
-  side). Done = eval green through the adapter; tile-smt has zero MLIR.
-- **M1** — extend tile-smt to model ~all of TTIR: **M1-MVP** (simple kernels) →
+  side). Done = eval green through the adapter; kernel-smt has zero MLIR.
+- **M1** — extend kernel-smt to model ~all of TTIR: **M1-MVP** (simple kernels) →
   **M1-complete** (complex, e.g. flash attention: scf.for/if, tt.dot, multi-dim
   reduce).
-- **M2** — model **tile-gpu-smt** (TTGIR: layouts/shared/warp/async/warp-spec),
+- **M2** — model **kernel-gpu-smt** (TTGIR: layouts/shared/warp/async/warp-spec),
   MVP → complete.
 - **M3** — beyond Triton; next target **TileLang** (non-MLIR frontend). (Later:
   Pallas/Helion ≈ free; accelerator hw; cross-language equivalence.)
 
-**Long-term:** split tile-smt into its **own repository** (developed under the
+**Long-term:** split kernel-smt into its **own repository** (developed under the
 Triton repo for now).
 
 **On fuzzing:** the fuzzer (today `permute_passes.py`; future kernel/pass
@@ -130,11 +130,11 @@ launches, where cross-instance races become relevant.
 
 ## 7. Success criteria (checkable)
 
-- tile-smt has **zero MLIR includes/symbols** and links only Z3.
-- tile-smt unit tests run **without** MLIR/Triton.
+- kernel-smt has **zero MLIR includes/symbols** and links only Z3.
+- kernel-smt unit tests run **without** MLIR/Triton.
 - The Triton adapter is the only MLIR-including part; the existing eval
   (add/softmax gates + permutation campaign) is **green** after the refactor.
-- Adding a Triton-IR-emitting frontend (Helion) needs **no new tile-smt code**.
+- Adding a Triton-IR-emitting frontend (Helion) needs **no new kernel-smt code**.
 
 ## 8. Non-goals (for now)
 

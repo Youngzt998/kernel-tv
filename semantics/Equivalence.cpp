@@ -1,6 +1,6 @@
 #include "semantics/Equivalence.h"
 
-namespace tile_smt {
+namespace kernel_smt {
 
 z3::check_result
 checkEquivalence(const MemState &s1, const MemState &s2,
@@ -29,4 +29,4 @@ checkEquivalence(const MemState &s1, const MemState &s2,
   return solver.check();
 }
 
-} // namespace tile_smt
+} // namespace kernel_smt

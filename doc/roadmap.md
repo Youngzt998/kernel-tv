@@ -6,9 +6,9 @@
 - **V<n>** — validation experiments.
 
 These IDs are stable and reused long-term. This file is the numbered execution
-plan; `tile-smt-goals.md` gives the *why* + success criteria, `tile-smt-design.md`
+plan; `kernel-smt-goals.md` gives the *why* + success criteria, `kernel-smt-design.md`
 the interfaces. (This supersedes the old M0–M4 list that used to live in
-tile-smt-goals.md.)
+kernel-smt-goals.md.)
 
 Starting point (pre-M0): today's **working, Triton-coupled** validator in
 `semantics/` (validates TTIR add/softmax; eval suite green).
@@ -18,19 +18,19 @@ Starting point (pre-M0): today's **working, Triton-coupled** validator in
 ## Major work (M)
 
 ### M0 — migrate existing results onto the new plan
-Move today's Triton-coupled implementation onto the tile-smt architecture. **Two
+Move today's Triton-coupled implementation onto the kernel-smt architecture. **Two
 sides:**
-- **SMT side** — extract `tile-smt` (core) out of `semantics/`: MLIR-free,
+- **SMT side** — extract `kernel-smt` (core) out of `semantics/`: MLIR-free,
   own `DType`/`Shape`/`MemId`, owning Memory + AbstractFp + tile ops +
   equivalence (witness); **standalone build + unit tests with only Z3**.
 - **Triton side** — turn the current op handlers + `State`/`Env` into a thin
-  **Triton adapter** that walks TTIR and calls the tile-smt builder.
+  **Triton adapter** that walks TTIR and calls the kernel-smt builder.
 - *Done when:* the eval suite (`run_eval.py all`) is green through the adapter,
-  and `tile-smt` has zero MLIR includes/symbols.
+  and `kernel-smt` has zero MLIR includes/symbols.
 - *Detailed split plan:* `doc/m0-plan.md`.
 
-### M1 — extend tile-smt to model (almost) all of Triton TTIR
-Grow the tile-smt semantic model, driven by TTIR's needs, until it cleanly models
+### M1 — extend kernel-smt to model (almost) all of Triton TTIR
+Grow the kernel-smt semantic model, driven by TTIR's needs, until it cleanly models
 the vast majority of TTIR semantics.
 
 **Two kernel corpora** drive it (they are complementary, not overlapping in role):
@@ -67,21 +67,21 @@ across program instances, and since FP addition is not associative, the result
 itself is not deterministic — so "bit-exact equivalence" has no meaning for
 them. Such kernels must report UNSUPPORTED, never a verdict.
 
-### M2 — model tile-gpu-smt (TTGIR / GPU layer)
+### M2 — model kernel-gpu-smt (TTGIR / GPU layer)
 Start the GPU layer: layouts / `convert_layout`, shared memory, warp/lane, async
 (TMA/mbarrier), warp specialization. Structured like M1 (**M2-MVP** →
 **M2-complete**).
 
 ### M3 — go beyond Triton
 Add a second frontend. **Next target: TileLang** (a non-MLIR frontend — proves
-framework independence). Its own adapter drives the same tile-smt / tile-gpu-smt.
+framework independence). Its own adapter drives the same kernel-smt / kernel-gpu-smt.
 (Later targets, e.g. Pallas/Helion "≈ free", and accelerator hardware, come after.)
 
 ---
 
 ## Testing work (T) — dynamic differential testing (independent bug hunt)
 
-An **independent, dynamic** line that does **not** use tile-smt. It is the M
+An **independent, dynamic** line that does **not** use kernel-smt. It is the M
 line's implicit control / ground truth, and its main aim is to **brute-force find
 real compiler bugs** (may also hit crash bugs).
 
@@ -101,16 +101,16 @@ execution / GPU.)
 - Fully independent of the M/V lines — can run today.
 
 **T helps M and V:** when T finds a real bug, **reconstruct the two IRs** (pass
-on vs off) and feed them to **M's validator (tile-smt)** — does it also catch the
+on vs off) and feed them to **M's validator (kernel-smt)** — does it also catch the
 bug? That directly tests how strong/complete our semantic modeling is, and gives
 V/M **ground-truth bug cases**.
 
 (Note: M's own unit tests + eval gates keeping green is part of each M's
 definition-of-done, not a T item — T is this dynamic differential line.)
 
-## Validation experiments (V) — static equivalence via tile-smt
+## Validation experiments (V) — static equivalence via kernel-smt
 
-Exercises **tile-smt's own power** and is the real use of the tool to hunt
+Exercises **kernel-smt's own power** and is the real use of the tool to hunt
 compiler bugs — but **static**: the SMT solver proves IR equivalence, with **no
 tensor launch** (the key contrast with T's dynamic runs).
 

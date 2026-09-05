@@ -1,6 +1,6 @@
 # PrebuiltMLIRCompiler.cmake — consume an already-built MLIR-based compiler.
 #
-# tile-smt is the top-level project; each language backend is enabled by
+# kernel-smt is the top-level project; each language backend is enabled by
 # pointing at that language's *already built* checkout (TRITON_ROOT today,
 # TILELANG_ROOT later). This module holds the parts that are the same for every
 # such compiler, so a new backend only has to describe what is specific to it.
@@ -14,12 +14,12 @@
 #   that is what we harvest — and we re-expose them through INTERFACE sources,
 #   which is exactly what the OBJECT libraries do in-tree.
 
-# tile_smt_read_cmake_cache(<build-dir> <cache-var> <out-var>)
+# kernel_smt_read_cmake_cache(<build-dir> <cache-var> <out-var>)
 #
 # Read one entry out of a configured CMake build directory's CMakeCache.txt.
 # Lets a backend recover how the host compiler was configured (its LLVM, its
 # C++ compiler) instead of making the user repeat it.
-function(tile_smt_read_cmake_cache build_dir key out_var)
+function(kernel_smt_read_cmake_cache build_dir key out_var)
   set(${out_var} "" PARENT_SCOPE)
   set(_cache "${build_dir}/CMakeCache.txt")
   if(NOT EXISTS "${_cache}")
@@ -33,24 +33,24 @@ function(tile_smt_read_cmake_cache build_dir key out_var)
   endif()
 endfunction()
 
-# tile_smt_resolve_input(<name> <doc>)
+# kernel_smt_resolve_input(<name> <doc>)
 #
 # Resolve a backend input from, in order: an existing CMake variable (-D...),
 # the same-named environment variable, or nothing. Caches the result so the
 # environment is only consulted on the first configure.
-macro(tile_smt_resolve_input name doc)
+macro(kernel_smt_resolve_input name doc)
   if(NOT DEFINED ${name} AND DEFINED ENV{${name}})
     set(${name} "$ENV{${name}}")
   endif()
   set(${name} "${${name}}" CACHE PATH "${doc}")
 endmacro()
 
-# tile_smt_find_mlir(<llvm-syspath>)
+# kernel_smt_find_mlir(<llvm-syspath>)
 #
 # Bring in MLIR/LLVM the same way the host compiler does, so our own
 # translation units are ABI-compatible with the objects we are about to link
 # (LLVM_ENABLE_ASSERTIONS changes ABI, and it travels in LLVM_DEFINITIONS).
-macro(tile_smt_find_mlir llvm_syspath)
+macro(kernel_smt_find_mlir llvm_syspath)
   if(NOT DEFINED MLIR_DIR OR NOT MLIR_DIR)
     set(MLIR_DIR "${llvm_syspath}/lib/cmake/mlir")
   endif()
@@ -61,7 +61,7 @@ macro(tile_smt_find_mlir llvm_syspath)
   include(AddMLIR)
 endmacro()
 
-# tile_smt_ninja_includes(<build-dir> <object-path> <out-var>)
+# kernel_smt_ninja_includes(<build-dir> <object-path> <out-var>)
 #
 # Recover the include path a Ninja build tree actually compiles one object with.
 #
@@ -74,7 +74,7 @@ endmacro()
 # CMake gives every object edge its own indented `INCLUDES =` line, so filter
 # the file down to the build statements we care about plus every INCLUDES line,
 # in order, and take the first INCLUDES after our object's statement.
-function(tile_smt_ninja_includes build_dir object out_var)
+function(kernel_smt_ninja_includes build_dir object out_var)
   set(${out_var} "" PARENT_SCOPE)
   set(_ninja_file "${build_dir}/build.ninja")
   if(NOT EXISTS "${_ninja_file}")

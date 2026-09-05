@@ -1,8 +1,8 @@
-#ifndef TILE_SMT_ABSTRACTFP_H
-#define TILE_SMT_ABSTRACTFP_H
+#ifndef KERNEL_SMT_ABSTRACTFP_H
+#define KERNEL_SMT_ABSTRACTFP_H
 
-// tile-smt core — Abstract floating-point encoding (FP mode a).
-// MLIR-free: this header depends only on Z3 and the tile-smt neutral types.
+// kernel-smt core — Abstract floating-point encoding (FP mode a).
+// MLIR-free: this header depends only on Z3 and the kernel-smt neutral types.
 
 #include "semantics/Types.h"
 
@@ -12,7 +12,7 @@
 #include <string>
 #include <z3++.h>
 
-namespace tile_smt {
+namespace kernel_smt {
 
 // Abstract floating-point encoding.
 //
@@ -144,6 +144,6 @@ private:
   std::map<DType, std::unique_ptr<AbstractFp>> byType;
 };
 
-} // namespace tile_smt
+} // namespace kernel_smt
 
-#endif // TILE_SMT_ABSTRACTFP_H
+#endif // KERNEL_SMT_ABSTRACTFP_H

@@ -1,5 +1,5 @@
-// Z3-only unit tests for the tile-smt core Abstract FP model. NO MLIR: the FP
-// type is the neutral tile_smt::DType, proving AbstractFp builds/runs without
+// Z3-only unit tests for the kernel-smt core Abstract FP model. NO MLIR: the FP
+// type is the neutral kernel_smt::DType, proving AbstractFp builds/runs without
 // any MLIR present.
 
 #include "semantics/AbstractFp.h"
@@ -7,7 +7,7 @@
 #include "SimpleTest.h"
 #include <z3++.h>
 
-using namespace tile_smt;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // Sort / bitwidth

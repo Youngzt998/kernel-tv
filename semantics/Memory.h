@@ -1,8 +1,8 @@
-#ifndef TILE_SMT_MEMORY_H
-#define TILE_SMT_MEMORY_H
+#ifndef KERNEL_SMT_MEMORY_H
+#define KERNEL_SMT_MEMORY_H
 
-// tile-smt core — byte-addressable memory + masked windowed load/store.
-// MLIR-free: this header depends only on Z3 and the tile-smt neutral types.
+// kernel-smt core — byte-addressable memory + masked windowed load/store.
+// MLIR-free: this header depends only on Z3 and the kernel-smt neutral types.
 // The Z3 encoding (store lambda + readBytes byte packing) is preserved exactly
 // from the pre-M0 Triton-coupled implementation.
 
@@ -13,7 +13,7 @@
 #include <string>
 #include <z3++.h>
 
-namespace tile_smt {
+namespace kernel_smt {
 
 // Byte-addressable heap: Array(BitVec(64), BitVec(8)).
 //
@@ -72,6 +72,6 @@ struct MemState {
   std::map<MemId, Memory> mems;
 };
 
-} // namespace tile_smt
+} // namespace kernel_smt
 
-#endif // TILE_SMT_MEMORY_H
+#endif // KERNEL_SMT_MEMORY_H

@@ -11,15 +11,15 @@
 # The built Triton checkout -- the same $TRITON_ROOT the CMake build uses.
 : "${TRITON_ROOT:?set TRITON_ROOT to a built Triton checkout before sourcing this}"
 # This repository.
-TILE_SMT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+KERNEL_SMT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # External deps (outside both trees, so necessarily absolute on this box).
 BETA_SP=/data/users/youngzt/fbsource/third-party/triton/beta/triton/.venv/lib/python3.12/site-packages
 
 export EQF_PY="$TRITON_ROOT/.venv/bin/python"
 # $TRITON_ROOT/python -> triton (that checkout, wins over beta's .pth);
-# $TILE_SMT_ROOT      -> makes the `eq_fuzzing` package importable;
+# $KERNEL_SMT_ROOT      -> makes the `eq_fuzzing` package importable;
 # $BETA_SP            -> torch + numpy.
-export PYTHONPATH="$TRITON_ROOT/python:$TILE_SMT_ROOT:$BETA_SP"
+export PYTHONPATH="$TRITON_ROOT/python:$KERNEL_SMT_ROOT:$BETA_SP"
 
 # CUDA toolchain (same archives the beta env uses)
 export TRITON_PTXAS_PATH="/home/youngzt/.triton/nvidia/nvcc/cuda_nvcc-linux-x86_64-12.9.86-archive/bin/ptxas"

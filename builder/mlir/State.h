@@ -14,9 +14,9 @@
 
 namespace Semantics {
 
-using tile_smt::Context;
-using tile_smt::Memory;
-using tile_smt::MemState;
+using kernel_smt::Context;
+using kernel_smt::Memory;
+using kernel_smt::MemState;
 
 // Complete symbolic program state at a point during execution.
 //
@@ -26,7 +26,7 @@ using tile_smt::MemState;
 // reorders accesses across distinct arguments. Each argument's Memory is an
 // Array(BitVec(64), BitVec(8)) whose index is the absolute byte address.
 //
-// Per-argument memories live in `memState`, keyed by an opaque tile_smt::MemId.
+// Per-argument memories live in `memState`, keyed by an opaque kernel_smt::MemId.
 // The adapter maps each pointer-argument mlir::Value to its MemId via
 // `ptrArgToMem`; the core Memory / MemState never see mlir::Value.
 //
@@ -107,7 +107,7 @@ private:
 // Final-memory equivalence lives in the MLIR-free core
 // (semantics/Equivalence.h). A builder pairs the two programs' memories by
 // MemId (e.g. positionally by kernel argument) and calls
-// tile_smt::checkEquivalence with the resulting pairing + solver.
+// kernel_smt::checkEquivalence with the resulting pairing + solver.
 
 } // namespace Semantics
 
