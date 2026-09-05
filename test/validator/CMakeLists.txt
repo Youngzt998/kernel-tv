@@ -31,7 +31,7 @@ endfunction()
 
 # The Memory unit test moved to the Z3-only core suite
 # (semantics/test/MemoryTest.cpp); Memory is now MLIR-free (DType-based) and
-# lives in the kernel-tv core, so the test no longer needs MLIR.
+# lives in the kernel-smt core, so the test no longer needs MLIR.
 
 # EnvTest exercises the MLIR builder-mlir layer (makeSymbolicValue / dtypeOf /
 # Env). It does not use State, so linking builder-mlir is enough (the tt.*
@@ -39,7 +39,7 @@ endfunction()
 add_tv_test(
   NAME TestTritonTVEnv
   SRCS EnvTest.cpp
-  LIBS kernel-tv-builder-mlir
+  LIBS kernel-smt-builder-mlir
 )
 
 # StateTest drives the full walk (State::interpretOp references the tt.*
@@ -47,7 +47,7 @@ add_tv_test(
 add_tv_test(
   NAME TestTritonTVState
   SRCS StateTest.cpp
-  LIBS kernel-tv-builder-triton
+  LIBS kernel-smt-builder-triton
 )
 
 # The Abstract-FP unit test moved to the Z3-only core suite

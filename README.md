@@ -7,6 +7,15 @@ Exit codes: `0` EQUIVALENT (UNSAT) · `1` NOT EQUIVALENT (SAT, prints a
 counterexample) · `2` UNKNOWN. Today it validates Triton TTIR at realistic
 tile sizes.
 
+## Naming
+
+Two names, on purpose. **kernel-tv** is the project: this repository, the
+`triton-tv` binary, the CMake project and its build helpers. **kernel-smt** is
+the SMT semantic modelling underneath it -- the `libkernel-smt.a` core, the
+`kernel_smt` C++ namespace, the `kernel-smt-builder-*` layers, and the planned
+`kernel-gpu-smt` and `kernel-accel-smt`. A validator is the tool; the semantic
+model is what it is built on, and other things can be built on the same model.
+
 ## Layout
 
 ```
@@ -100,7 +109,7 @@ or build Z3 from source and pass `-DZ3_ROOT=/path/to/z3/install`.
 ## Testing
 
 ```bash
-ctest --test-dir build -R KernelTv          # core, Z3-only
+ctest --test-dir build -R KernelSmt          # core, Z3-only
 ctest --test-dir build -R TestTritonTV     # builder, needs the Triton backend
 python eval/run_eval.py all                # validator gates
 python eval/permute_passes.py              # pass-permutation bug hunt

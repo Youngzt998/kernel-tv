@@ -11,7 +11,7 @@
 
 #include <z3++.h>
 
-namespace kernel_tv {
+namespace kernel_smt {
 
 // Scalar data type. Neutral replacement for a source IR's scalar type in the
 // core (a builder maps its own IR types onto DType).
@@ -40,6 +40,6 @@ std::pair<unsigned, unsigned> fpExpSigBits(DType);
 // Z3 sort used to encode a single element of `ty` under the given FP mode.
 z3::sort getElemSort(z3::context &ctx, DType ty, FPMode fpMode);
 
-} // namespace kernel_tv
+} // namespace kernel_smt
 
 #endif // KERNEL_TV_TYPES_H

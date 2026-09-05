@@ -13,7 +13,7 @@
 #include <string>
 #include <z3++.h>
 
-namespace kernel_tv {
+namespace kernel_smt {
 
 // Byte-addressable heap: Array(BitVec(64), BitVec(8)).
 //
@@ -72,6 +72,6 @@ struct MemState {
   std::map<MemId, Memory> mems;
 };
 
-} // namespace kernel_tv
+} // namespace kernel_smt
 
 #endif // KERNEL_TV_MEMORY_H

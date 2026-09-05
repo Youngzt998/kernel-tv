@@ -24,7 +24,7 @@
 #include <vector>
 #include <z3++.h>
 
-namespace kernel_tv {
+namespace kernel_smt {
 
 class Context {
 public:
@@ -136,6 +136,6 @@ private:
   AbstractFpRegistry fpReg_;
 };
 
-} // namespace kernel_tv
+} // namespace kernel_smt
 
 #endif // KERNEL_TV_CONTEXT_H

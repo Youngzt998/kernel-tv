@@ -2,7 +2,7 @@
 #
 # This is the top-level project. It builds in two tiers:
 #
-#   core     semantics/ -> libkernel-tv.a and its unit tests. MLIR-free, links
+#   core     semantics/ -> libkernel-smt.a and its unit tests. MLIR-free, links
 #            only Z3. Always built; needs nothing but a C++17 compiler and Z3.
 #
 #   backend  builder/ + bin/triton-tv + test/validator. One per tile language,
@@ -106,15 +106,15 @@ include(PrebuiltTriton)
 
 if(NOT TARGET kernel-tv::triton)
   message(STATUS
-    "kernel-tv: core only (kernel-tv + kernel-tv-tests). Set "
+    "kernel-tv: core only (kernel-smt + kernel-smt-tests). Set "
     "TRITON_ROOT=<a built Triton checkout> to build the Triton backend "
     "and triton-tv. See README.md.")
   return()
 endif()
 
 # Builder layer (per-language modeling onto the core):
-#   kernel-tv-builder-mlir    — shared MLIR tools + arith/math/scf handlers
-#   kernel-tv-builder-triton  — Triton tt.* handlers (links builder-mlir)
+#   kernel-smt-builder-mlir    — shared MLIR tools + arith/math/scf handlers
+#   kernel-smt-builder-triton  — Triton tt.* handlers (links builder-mlir)
 # Both compile WITHOUT -fno-exceptions/-fno-rtti so std::throw (Env::lookup) and
 # z3++ exceptions work.
 add_subdirectory(builder/mlir)
@@ -127,7 +127,7 @@ add_executable(triton-tv bin/triton-tv.cpp)
 # This TU instantiates llvm::cl templates, so it has to agree with how LLVM was
 # built about RTTI/exceptions (see cmake/PrebuiltTriton.cmake).
 target_compile_options(triton-tv PRIVATE ${KERNEL_TV_NO_EH_RTTI_FLAGS})
-target_link_libraries(triton-tv PRIVATE kernel-tv-builder-triton)
+target_link_libraries(triton-tv PRIVATE kernel-smt-builder-triton)
 kernel_tv_link_z3(triton-tv PRIVATE)
 mlir_check_all_link_libraries(triton-tv)
 

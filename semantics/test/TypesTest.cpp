@@ -6,7 +6,7 @@
 
 #include <z3++.h>
 
-using namespace kernel_tv;
+using namespace kernel_smt;
 
 TEST(Types, ByteWidth) {
   EXPECT_EQ(getByteWidth(DType::I1), 1u);

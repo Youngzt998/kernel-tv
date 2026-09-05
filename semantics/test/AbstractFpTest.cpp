@@ -1,5 +1,5 @@
 // Z3-only unit tests for the kernel-tv core Abstract FP model. NO MLIR: the FP
-// type is the neutral kernel_tv::DType, proving AbstractFp builds/runs without
+// type is the neutral kernel_smt::DType, proving AbstractFp builds/runs without
 // any MLIR present.
 
 #include "semantics/AbstractFp.h"
@@ -7,7 +7,7 @@
 #include "SimpleTest.h"
 #include <z3++.h>
 
-using namespace kernel_tv;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // Sort / bitwidth

@@ -13,7 +13,7 @@
 #include <vector>
 #include <z3++.h>
 
-namespace kernel_tv {
+namespace kernel_smt {
 
 // Check semantic equivalence of two final memory states.
 //
@@ -37,6 +37,6 @@ checkEquivalence(const MemState &s1, const MemState &s2,
                  const std::vector<std::pair<MemId, MemId>> &pairing,
                  z3::solver &solver);
 
-} // namespace kernel_tv
+} // namespace kernel_smt
 
 #endif // KERNEL_TV_EQUIVALENCE_H

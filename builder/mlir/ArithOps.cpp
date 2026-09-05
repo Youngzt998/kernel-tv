@@ -52,7 +52,7 @@ State Semantics::handleArithConstant(const State &s, mlir::Operation *op) {
     if (auto denseAttr = llvm::dyn_cast<mlir::DenseIntElementsAttr>(value)) {
       auto tensorTy = llvm::cast<mlir::RankedTensorType>(resType);
       DType elem = dtypeOf(tensorTy.getElementType());
-      kernel_tv::Shape shape(tensorTy.getShape().begin(),
+      kernel_smt::Shape shape(tensorTy.getShape().begin(),
                             tensorTy.getShape().end());
       if (denseAttr.isSplat()) {
         int64_t v = denseAttr.getSplatValue<llvm::APInt>().getSExtValue();
@@ -68,7 +68,7 @@ State Semantics::handleArithConstant(const State &s, mlir::Operation *op) {
     if (auto denseFP = llvm::dyn_cast<mlir::DenseFPElementsAttr>(value)) {
       auto tensorTy = llvm::cast<mlir::RankedTensorType>(resType);
       DType elem = dtypeOf(tensorTy.getElementType());
-      kernel_tv::Shape shape(tensorTy.getShape().begin(),
+      kernel_smt::Shape shape(tensorTy.getShape().begin(),
                             tensorTy.getShape().end());
       // Abstract/IntegerRange carry FP as BitVec(width); use the IEEE bit
       // pattern as the opaque id (same convention as the scalar float case).

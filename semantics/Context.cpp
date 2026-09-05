@@ -10,7 +10,7 @@
 // the built lambdas (__ci/__bi/__ei/__ri/__si/__ai/__ue/__dense_base/...) are
 // kept unchanged so the SMT encoding is byte-for-byte identical.
 
-using namespace kernel_tv;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // Internal helpers

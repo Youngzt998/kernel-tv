@@ -39,7 +39,7 @@ Value Semantics::makeSymbolicValue(mlir::Type type, Context &context,
   // Ranked tensor → Tensor: fresh Array(BitVec(32), elem_sort)
   if (auto tensorTy = llvm::dyn_cast<mlir::RankedTensorType>(type)) {
     DType elem = dtypeOf(tensorTy.getElementType());
-    kernel_tv::Shape shape(tensorTy.getShape().begin(),
+    kernel_smt::Shape shape(tensorTy.getShape().begin(),
                           tensorTy.getShape().end());
     return context.freshInput(elem, shape, name);
   }
@@ -53,7 +53,7 @@ Value Semantics::makeSymbolicValue(mlir::Type type, Context &context,
   // Integer and float scalars → Scalar (empty shape → freshInput returns
   // Scalar)
   if (llvm::isa<mlir::IntegerType>(type) || llvm::isa<mlir::FloatType>(type))
-    return context.freshInput(dtypeOf(type), kernel_tv::Shape{}, name);
+    return context.freshInput(dtypeOf(type), kernel_smt::Shape{}, name);
 
   // Fallback: treat as opaque 64-bit pointer (e.g. unrecognized dialect types).
   return context.freshPtr(DType::Ptr, MemId{0}, name);

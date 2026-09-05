@@ -12,7 +12,7 @@
 #include <string>
 #include <z3++.h>
 
-namespace kernel_tv {
+namespace kernel_smt {
 
 // Abstract floating-point encoding.
 //
@@ -144,6 +144,6 @@ private:
   std::map<DType, std::unique_ptr<AbstractFp>> byType;
 };
 
-} // namespace kernel_tv
+} // namespace kernel_smt
 
 #endif // KERNEL_TV_ABSTRACTFP_H

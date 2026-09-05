@@ -20,7 +20,7 @@ counterexample), `2` = UNKNOWN. Today it validates **Triton TTIR** (add_kernel,
 softmax) at realistic sizes.
 
 **M0 is DONE.** The code is split into an MLIR-free core + per-language builders
-(§6). Verified: core has zero MLIR, `libkernel-tv.a` links only Z3, all unit tests
+(§6). Verified: core has zero MLIR, `libkernel-smt.a` links only Z3, all unit tests
 and the eval suite green.
 
 **Current design facts (accurate — trust these over any older doc):**
@@ -66,20 +66,20 @@ and the eval suite green.
 parts of it are still Triton-shaped — e.g. `addPtr`/`splatPtr` are *pointer-level*
 addressing, not abstract tensor ops (memref/TPU languages don't address by
 pointer). Generalizing the op set along the lines above is M1 work. See
-`doc/kernel-tv-design.md` §"Abstract tensor operation set".
+`doc/kernel-smt-design.md` §"Abstract tensor operation set".
 
 **Near-term north star:** ship a complete implementation on **Triton** and use it
 to **find & reproduce a real Triton compilation bug**.
 
 The library split:
-- **`kernel-tv`** — hardware-neutral core (the abstract tensor semantics above).
-- **`kernel-gpu-tv`** — GPU/SIMT layer (M2): layouts/`convert_layout`, shared
+- **`kernel-smt`** — hardware-neutral core (the abstract tensor semantics above).
+- **`kernel-gpu-smt`** — GPU/SIMT layer (M2): layouts/`convert_layout`, shared
   memory, warp/lane, async TMA/mbarrier, warp specialization.
-- **(future) `kernel-accel-tv`** — TPU/Mosaic + Trainium/NKI; **one layer covers
+- **(future) `kernel-accel-smt`** — TPU/Mosaic + Trainium/NKI; **one layer covers
   both**.
 
-Full goals + success criteria: `doc/kernel-tv-goals.md`. Interfaces:
-`doc/kernel-tv-design.md`. Numbered plan: `doc/roadmap.md`.
+Full goals + success criteria: `doc/kernel-smt-goals.md`. Interfaces:
+`doc/kernel-smt-design.md`. Numbered plan: `doc/roadmap.md`.
 
 **Locked decisions:** Builder API (adapter calls the lib; no neutral IR);
 incremental access model (linear byte-heap + pointer, abstract enough to swap for
@@ -116,7 +116,7 @@ C++ changes require a rebuild. Full instructions and the Z3 requirement
 ```bash
 # core only — fast, no MLIR
 cmake -S . -B build -G Ninja -DZ3_ROOT=<z3>
-ninja -C build kernel-tv kernel-tv-tests
+ninja -C build kernel-smt kernel-smt-tests
 
 # full — needs an already-built Triton checkout; the triton-tv link is slow
 TRITON_ROOT=<triton> cmake -S . -B build -G Ninja -DZ3_ROOT=<z3>
@@ -126,7 +126,7 @@ ninja -C build triton-tv tv-validator-tests
 ## 5. Testing
 
 **Unit tests.** Two groups:
-- **core (Z3-only, no MLIR)** — `ctest --test-dir build -R KernelTv` (5 tests:
+- **core (Z3-only, no MLIR)** — `ctest --test-dir build -R KernelSmt` (5 tests:
   Types, AbstractFp, Memory, Context, Equivalence).
 - **builder (needs MLIR)** — `ctest --test-dir build -R TestTritonTV` (Env, State).
 
@@ -157,8 +157,15 @@ IR you are validating — pin it explicitly when it matters.
 
 ## 6. Where things are
 
+**Naming:** `kernel-tv` is the project (repo, `triton-tv` binary, CMake project
+and build helpers); `kernel-smt` is the SMT semantic modelling under it (the
+core library, the `kernel_smt` namespace, `kernel-smt-builder-*`, and the
+planned `kernel-gpu-smt` / `kernel-accel-smt`). Keep new names on the right side
+of that line.
+
+
 ```
-semantics/     CORE `kernel-tv` — MLIR-free, links ONLY z3 (namespace kernel_tv)
+semantics/     CORE `kernel-smt` — MLIR-free, links ONLY z3 (namespace kernel_smt)
                Types · Value · AbstractFp · Memory · Context · Equivalence
   test/        Z3-only unit tests (SimpleTest.h harness)
 builder/       per-language builders — the ONLY place that includes MLIR
@@ -173,7 +180,7 @@ eval/          pairs/ inequal/ compile-options/ solver-cost/ run_eval.py
                permute_passes.py
 eq_fuzzing/    equivalence fuzzer driving triton-opt
 benchmark/     benchmark_kernels.py — 420+ collected @triton.jit kernels
-doc/           roadmap.md · kernel-tv-goals.md · kernel-tv-design.md ·
+doc/           roadmap.md · kernel-smt-goals.md · kernel-smt-design.md ·
                m0-plan.md · code-navigation.md · tensor-languages-survey.md
   kb/          knowledge base on external tools — REFERENCE, NOT plans
                (alive2-loops.md). Nothing in kb/ is an adopted decision.

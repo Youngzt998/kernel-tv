@@ -5,7 +5,7 @@
 // Core must stay free of MLIR/LLVM: use std exceptions instead of
 // llvm_unreachable for the unreachable/invalid cases.
 
-namespace kernel_tv {
+namespace kernel_smt {
 
 unsigned getByteWidth(DType ty) {
   switch (ty) {
@@ -65,4 +65,4 @@ z3::sort getElemSort(z3::context &ctx, DType ty, FPMode fpMode) {
   throw std::logic_error("getElemSort: unhandled DType");
 }
 
-} // namespace kernel_tv
+} // namespace kernel_smt

@@ -4,7 +4,7 @@
 
 // Core (kernel-tv) — MLIR-free: use std exceptions instead of llvm_unreachable.
 
-using namespace kernel_tv;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // AbstractFp

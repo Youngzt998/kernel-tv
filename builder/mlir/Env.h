@@ -16,14 +16,14 @@
 namespace Semantics {
 
 // Builder-side value model uses the kernel-tv core value types directly.
-using kernel_tv::Context;
-using kernel_tv::DType;
-using kernel_tv::FPMode;
-using kernel_tv::MemId;
-using kernel_tv::Ptr;
-using kernel_tv::Scalar;
-using kernel_tv::Tensor;
-using kernel_tv::Value;
+using kernel_smt::Context;
+using kernel_smt::DType;
+using kernel_smt::FPMode;
+using kernel_smt::MemId;
+using kernel_smt::Ptr;
+using kernel_smt::Scalar;
+using kernel_smt::Tensor;
+using kernel_smt::Value;
 
 // Pointer comparator for mlir::Value so it can be used as a std::map key.
 // mlir::Value is not default-constructible, so llvm::DenseMap is not usable

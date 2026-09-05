@@ -1,5 +1,5 @@
-# kernel-tv-builder-mlir — shared builder layer for all MLIR-based languages.
-# Reads MLIR IR (types, ops) and drives the MLIR-free core (kernel-tv) through
+# kernel-smt-builder-mlir — shared builder layer for all MLIR-based languages.
+# Reads MLIR IR (types, ops) and drives the MLIR-free core (kernel-smt) through
 # the Context builder API. Holds: dtypeOf, Env (mlir::Value -> Value), the
 # MemId-mapping + block-walk driver (State), and the standard-dialect handlers
 # (arith / math / scf). Links the core + the language backend.
@@ -12,7 +12,7 @@
 # Compiled WITHOUT -fno-exceptions/-fno-rtti so std::throw (Env::lookup) and the
 # z3++ exceptions work normally.
 
-add_library(kernel-tv-builder-mlir STATIC
+add_library(kernel-smt-builder-mlir STATIC
   DTypeOf.cpp
   Env.cpp
   State.cpp
@@ -21,15 +21,15 @@ add_library(kernel-tv-builder-mlir STATIC
 
 # The repository root is the include root: code uses
 # #include "builder/mlir/State.h", "semantics/Context.h", etc.
-target_include_directories(kernel-tv-builder-mlir PUBLIC
+target_include_directories(kernel-smt-builder-mlir PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
-target_link_libraries(kernel-tv-builder-mlir PUBLIC
-  kernel-tv          # MLIR-free core (Context / Memory / Value / AbstractFp)
+target_link_libraries(kernel-smt-builder-mlir PUBLIC
+  kernel-smt         # MLIR-free core (Context / Memory / Value / AbstractFp)
   kernel-tv::triton  # Triton objects + MLIR (see cmake/PrebuiltTriton.cmake)
   # Cyclic on purpose, and it is the same coupling the NOTE above describes:
   # State::interpretOp calls handleTt*, which lives in builder/triton, which in
   # turn is built on State. Declaring the cycle is what makes CMake repeat both
   # archives on the link line; without it handleTt* comes out undefined.
-  kernel-tv-builder-triton
+  kernel-smt-builder-triton
 )

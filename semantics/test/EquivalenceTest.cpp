@@ -1,6 +1,6 @@
 // Z3-only unit tests for the kernel-tv core checkEquivalence (final-memory
 // equivalence via the lambda store + pointwise witness comparison). NO MLIR:
-// memories are keyed by the neutral kernel_tv::MemId and the pairing is a plain
+// memories are keyed by the neutral kernel_smt::MemId and the pairing is a plain
 // vector<pair<MemId,MemId>>, proving the top-level equivalence query
 // builds/runs without any MLIR present.
 
@@ -13,7 +13,7 @@
 #include <vector>
 #include <z3++.h>
 
-using namespace kernel_tv;
+using namespace kernel_smt;
 
 //===----------------------------------------------------------------------===//
 // Test helpers (same tile builders as MemoryTest, kept local).
