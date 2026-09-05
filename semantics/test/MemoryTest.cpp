@@ -1,6 +1,6 @@
-// Z3-only unit tests for the kernel-smt core Memory (byte-addressable heap +
+// Z3-only unit tests for the kernel-tv core Memory (byte-addressable heap +
 // masked windowed load/store). NO MLIR: element types are the neutral
-// kernel_smt::DType, proving Memory builds/runs without any MLIR present.
+// kernel_tv::DType, proving Memory builds/runs without any MLIR present.
 //
 // Ported from the pre-M0 MLIR-based MemoryModelTest.cpp. getElemSort /
 // getByteWidth / fpExpSigBits are covered by TypesTest, so this file focuses on
@@ -13,7 +13,7 @@
 #include "SimpleTest.h"
 #include <z3++.h>
 
-using namespace kernel_smt;
+using namespace kernel_tv;
 
 //===----------------------------------------------------------------------===//
 // Test helpers

@@ -1,8 +1,8 @@
-# kernel-smt — SMT translation validation for tile languages.
+# kernel-tv — SMT translation validation for tile languages.
 #
 # This is the top-level project. It builds in two tiers:
 #
-#   core     semantics/ -> libkernel-smt.a and its unit tests. MLIR-free, links
+#   core     semantics/ -> libkernel-tv.a and its unit tests. MLIR-free, links
 #            only Z3. Always built; needs nothing but a C++17 compiler and Z3.
 #
 #   backend  builder/ + bin/triton-tv + test/validator. One per tile language,
@@ -14,7 +14,7 @@
 # repository is usable on a machine that has no Triton and no LLVM.
 
 cmake_minimum_required(VERSION 3.20)
-project(kernel-smt CXX)
+project(kernel-tv CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -80,10 +80,10 @@ if(NOT Z3_FOUND)
       "arrived in Z3 4.8.12. Install a newer Z3 and pass "
       "-DZ3_ROOT=/path/to/z3 -- see README.md for two ways to get one.")
   endif()
-  message(STATUS "kernel-smt: Z3${_z3_version_note} at ${Z3_LIBRARIES}")
+  message(STATUS "kernel-tv: Z3${_z3_version_note} at ${Z3_LIBRARIES}")
 endif()
 
-function(kernel_smt_link_z3 target scope)
+function(kernel_tv_link_z3 target scope)
   if(TARGET z3::libz3)
     target_link_libraries(${target} ${scope} z3::libz3)
   else()
@@ -92,7 +92,7 @@ function(kernel_smt_link_z3 target scope)
   endif()
 endfunction()
 
-option(KERNEL_SMT_BUILD_TESTS "Build kernel-smt unit tests" ON)
+option(KERNEL_TV_BUILD_TESTS "Build kernel-tv unit tests" ON)
 
 # ---------------------------------------------------------------------------
 # Core: MLIR-free semantic model. Links ONLY z3.
@@ -104,17 +104,17 @@ add_subdirectory(semantics)
 # ---------------------------------------------------------------------------
 include(PrebuiltTriton)
 
-if(NOT TARGET kernel-smt::triton)
+if(NOT TARGET kernel-tv::triton)
   message(STATUS
-    "kernel-smt: core only (kernel-smt + kernel-smt-tests). Set "
+    "kernel-tv: core only (kernel-tv + kernel-tv-tests). Set "
     "TRITON_ROOT=<a built Triton checkout> to build the Triton backend "
     "and triton-tv. See README.md.")
   return()
 endif()
 
 # Builder layer (per-language modeling onto the core):
-#   kernel-smt-builder-mlir    — shared MLIR tools + arith/math/scf handlers
-#   kernel-smt-builder-triton  — Triton tt.* handlers (links builder-mlir)
+#   kernel-tv-builder-mlir    — shared MLIR tools + arith/math/scf handlers
+#   kernel-tv-builder-triton  — Triton tt.* handlers (links builder-mlir)
 # Both compile WITHOUT -fno-exceptions/-fno-rtti so std::throw (Env::lookup) and
 # z3++ exceptions work.
 add_subdirectory(builder/mlir)
@@ -126,13 +126,13 @@ add_subdirectory(builder/triton)
 add_executable(triton-tv bin/triton-tv.cpp)
 # This TU instantiates llvm::cl templates, so it has to agree with how LLVM was
 # built about RTTI/exceptions (see cmake/PrebuiltTriton.cmake).
-target_compile_options(triton-tv PRIVATE ${KERNEL_SMT_NO_EH_RTTI_FLAGS})
-target_link_libraries(triton-tv PRIVATE kernel-smt-builder-triton)
-kernel_smt_link_z3(triton-tv PRIVATE)
+target_compile_options(triton-tv PRIVATE ${KERNEL_TV_NO_EH_RTTI_FLAGS})
+target_link_libraries(triton-tv PRIVATE kernel-tv-builder-triton)
+kernel_tv_link_z3(triton-tv PRIVATE)
 mlir_check_all_link_libraries(triton-tv)
 
 # Validator unit tests use the header-only harness in test/validator/SimpleTest.h
 # (no GoogleTest, no network).
-if(KERNEL_SMT_BUILD_TESTS)
+if(KERNEL_TV_BUILD_TESTS)
   add_subdirectory(test/validator)
 endif()

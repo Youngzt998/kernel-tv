@@ -1,8 +1,8 @@
-#ifndef KERNEL_SMT_TYPES_H
-#define KERNEL_SMT_TYPES_H
+#ifndef KERNEL_TV_TYPES_H
+#define KERNEL_TV_TYPES_H
 
-// kernel-smt core — neutral scalar types, independent of any source IR.
-// This header (and the whole kernel-smt core) MUST NOT include MLIR/Triton; it
+// kernel-tv core — neutral scalar types, independent of any source IR.
+// This header (and the whole kernel-tv core) MUST NOT include MLIR/Triton; it
 // depends only on Z3 and the C++ standard library.
 
 #include <cstdint>
@@ -11,7 +11,7 @@
 
 #include <z3++.h>
 
-namespace kernel_smt {
+namespace kernel_tv {
 
 // Scalar data type. Neutral replacement for a source IR's scalar type in the
 // core (a builder maps its own IR types onto DType).
@@ -26,7 +26,7 @@ using Shape = std::vector<int64_t>;
 enum class MemId : uint32_t {};
 
 // Floating-point encoding strategy (pluggable). Only Abstract is implemented;
-// Real / IntegerRange / FPA are placeholders (see tv/doc/kernel-smt-design.md
+// Real / IntegerRange / FPA are placeholders (see tv/doc/kernel-tv-design.md
 // §"FP encoding modes").
 enum class FPMode { Abstract, Real, IntegerRange, FPA };
 
@@ -40,6 +40,6 @@ std::pair<unsigned, unsigned> fpExpSigBits(DType);
 // Z3 sort used to encode a single element of `ty` under the given FP mode.
 z3::sort getElemSort(z3::context &ctx, DType ty, FPMode fpMode);
 
-} // namespace kernel_smt
+} // namespace kernel_tv
 
-#endif // KERNEL_SMT_TYPES_H
+#endif // KERNEL_TV_TYPES_H

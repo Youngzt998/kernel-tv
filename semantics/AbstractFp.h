@@ -1,8 +1,8 @@
-#ifndef KERNEL_SMT_ABSTRACTFP_H
-#define KERNEL_SMT_ABSTRACTFP_H
+#ifndef KERNEL_TV_ABSTRACTFP_H
+#define KERNEL_TV_ABSTRACTFP_H
 
-// kernel-smt core — Abstract floating-point encoding (FP mode a).
-// MLIR-free: this header depends only on Z3 and the kernel-smt neutral types.
+// kernel-tv core — Abstract floating-point encoding (FP mode a).
+// MLIR-free: this header depends only on Z3 and the kernel-tv neutral types.
 
 #include "semantics/Types.h"
 
@@ -12,7 +12,7 @@
 #include <string>
 #include <z3++.h>
 
-namespace kernel_smt {
+namespace kernel_tv {
 
 // Abstract floating-point encoding.
 //
@@ -144,6 +144,6 @@ private:
   std::map<DType, std::unique_ptr<AbstractFp>> byType;
 };
 
-} // namespace kernel_smt
+} // namespace kernel_tv
 
-#endif // KERNEL_SMT_ABSTRACTFP_H
+#endif // KERNEL_TV_ABSTRACTFP_H

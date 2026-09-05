@@ -22,7 +22,7 @@
 
 using namespace Semantics;
 
-using kernel_smt::getElemSort;
+using kernel_tv::getElemSort;
 
 //===----------------------------------------------------------------------===//
 // tt.get_program_id
@@ -58,7 +58,7 @@ State Semantics::handleTtMakeRange(const State &s, mlir::Operation *op) {
   auto resultTy =
       llvm::cast<mlir::RankedTensorType>(rangeOp.getResult().getType());
   DType elem = dtypeOf(resultTy.getElementType());
-  kernel_smt::Shape shape(resultTy.getShape().begin(), resultTy.getShape().end());
+  kernel_tv::Shape shape(resultTy.getShape().begin(), resultTy.getShape().end());
 
   State next = s;
   next.env.bind(rangeOp.getResult(), s.context.iota(start, shape, elem));
@@ -75,7 +75,7 @@ State Semantics::handleTtSplat(const State &s, mlir::Operation *op) {
 
   auto resultTy =
       llvm::cast<mlir::RankedTensorType>(splatOp.getResult().getType());
-  kernel_smt::Shape shape(resultTy.getShape().begin(), resultTy.getShape().end());
+  kernel_tv::Shape shape(resultTy.getShape().begin(), resultTy.getShape().end());
 
   auto makeTile = [&]() -> Tensor {
     if (auto *sc = std::get_if<Scalar>(&src))
@@ -143,7 +143,7 @@ State Semantics::handleTtLoad(const State &s, mlir::Operation *op) {
   auto resultTy =
       llvm::cast<mlir::RankedTensorType>(loadOp.getResult().getType());
   DType elem = dtypeOf(resultTy.getElementType());
-  kernel_smt::Shape shape(resultTy.getShape().begin(), resultTy.getShape().end());
+  kernel_tv::Shape shape(resultTy.getShape().begin(), resultTy.getShape().end());
 
   mlir::Value otherVal = loadOp.getOther();
   Tensor otherTile = [&]() -> Tensor {

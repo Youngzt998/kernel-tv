@@ -1,4 +1,4 @@
-# kernel-smt — design draft
+# kernel-tv — design draft
 
 Draft for decoupling the SMT tensor semantics out of Triton into a reusable,
 IR-agnostic library. Context/goal: `CLAUDE.md` §2 and
@@ -6,8 +6,8 @@ IR-agnostic library. Context/goal: `CLAUDE.md` §2 and
 
 ## Locked decisions (2026-07-23)
 1. **Builder API** (not a neutral IR). Each language ships an *adapter* that
-   walks its own IR and calls `kernel_smt::Context` builder methods; the library
-   builds Z3 directly. No intermediate kernel-smt IR data structure.
+   walks its own IR and calls `kernel_tv::Context` builder methods; the library
+   builds Z3 directly. No intermediate kernel-tv IR data structure.
 2. **Incremental access model.** The core exposes an abstract *masked windowed
    access* interface whose default implementation is the current **linear
    byte-heap + pointer** model (Triton uses it directly). Designed so the access
@@ -29,13 +29,13 @@ IR-agnostic library. Context/goal: `CLAUDE.md` §2 and
 ## Library boundary
 | Layer | Contents |
 |---|---|
-| **`kernel-smt`** (hw-neutral core) | value model (`Scalar`/`Tensor`/`Ptr`), own `DType`+`Shape`, `AbstractFp` (+future Real/FPA), elementwise arith/math, structural ops (iota/splat/broadcast/reshape/expand_dims), reduce/scan (combine), dot/contract, `program_id`, abstract memory + masked windowed load/store (default = linear byte-heap+pointer), `checkEquivalence` (witness), control-flow state merge (if→ite, for→unroll) |
-| **`kernel-gpu-smt`** (GPU layer; mostly future) | layouts / `convert_layout`, shared memory, warp/lane, async (TMA/mbarrier), warp specialization |
+| **`kernel-tv`** (hw-neutral core) | value model (`Scalar`/`Tensor`/`Ptr`), own `DType`+`Shape`, `AbstractFp` (+future Real/FPA), elementwise arith/math, structural ops (iota/splat/broadcast/reshape/expand_dims), reduce/scan (combine), dot/contract, `program_id`, abstract memory + masked windowed load/store (default = linear byte-heap+pointer), `checkEquivalence` (witness), control-flow state merge (if→ite, for→unroll) |
+| **`kernel-gpu-tv`** (GPU layer; mostly future) | layouts / `convert_layout`, shared memory, warp/lane, async (TMA/mbarrier), warp specialization |
 | **triton adapter** (`builder/triton/`, imports both) | walk `tt.func`; `Env` (`mlir::Value`→`Value`); `mlir::Value`→`MemId` map; per-op: read operands/attrs → call builder → bind result |
 
 ## Type & value model (no MLIR types)
 ```cpp
-namespace kernel_smt {
+namespace kernel_tv {
 enum class DType { I1, I8, I16, I32, I64, F16, BF16, F32, F64, Ptr };
 
 // Opaque handle for "which memory/address space" a pointer belongs to.
@@ -77,13 +77,13 @@ Conversely one language op may expand into several core ops (`tt.dot_scaled` =
 decode scales → `map(mul)` → `contract`).
 
 **Completeness test:** adding a new language should require **no new core ops** —
-only a new builder. (This is success criterion §7 in `kernel-smt-goals.md`.)
+only a new builder. (This is success criterion §7 in `kernel-tv-goals.md`.)
 
 **Layering note.** *How a window is addressed* is NOT an abstract tensor op.
 Pointer arithmetic is Triton's (and the GPU's) addressing model; memref/TPU
 languages address by indices into a ref. So pointer ops belong to the access
 layer beneath the tensor algebra (today: the linear byte-heap + pointer model),
-and layouts/warps belong to `kernel-gpu-smt` — never to the abstract set above.
+and layouts/warps belong to `kernel-gpu-tv` — never to the abstract set above.
 
 ⚠️ **Current gap (M1 work).** Today's `Context` was lifted from the Triton op
 handlers, so parts of it are still Triton-shaped and should be generalized:
@@ -147,7 +147,7 @@ current single-`z3::lambda` update; equivalence keeps the symbolic-witness check
 FP is a **pluggable encoding strategy** chosen per modeling run; the SAME builder
 op (e.g. `ctx.add` on floats) dispatches to the current mode, so **op semantics
 change with the mode**. This is today's `AbstractFp` + `FPMode`, generalized and
-moved into `kernel-smt` (the pre-migration design still holds). Hardware-neutral —
+moved into `kernel-tv` (the pre-migration design still holds). Hardware-neutral —
 cross-hardware numeric differences only appear under FPA.
 
 - **(a) Abstract (uninterpreted id)** — *default, implemented.* each FP value is
@@ -221,9 +221,9 @@ The generic parts of `scf.if`/`scf.for` are hardware-neutral and belong in core:
 The adapter supplies the bodies (by walking regions); the core supplies the merge
 / unroll primitives.
 
-## Builder layer — per-language modeling onto kernel-smt
+## Builder layer — per-language modeling onto kernel-tv
 
-The core (`kernel-smt`, MLIR-free, Z3-only) is driven by **builders** (what earlier
+The core (`kernel-tv`, MLIR-free, Z3-only) is driven by **builders** (what earlier
 drafts called the "adapter") — one per source language — that walk that language's
 IR and model it onto the core via the `Context`/memory builder API. All builders
 live under **`builder/`**:
@@ -237,24 +237,24 @@ live under **`builder/`**:
   (make_range/splat/addptr/load/store/reduce/dot/program_id/…) built on top of
   builder/mlir, plus the Triton entry (parse `.ttir`, load Triton dialects).
 - future: `builder/tilelang/` (non-MLIR, TVM), `builder/pallas/`, … — each models
-  its own IR onto kernel-smt / kernel-gpu-smt.
+  its own IR onto kernel-tv / kernel-gpu-tv.
 
 `State` is a builder-side driver (holds `Context&` + `MemState` + `Env` + the
 `mlir::Value→MemId` map); the walk/dispatch + standard-dialect handlers live in
 builder/mlir, the `tt.*` handlers in builder/triton.
 
 Build targets (layered so the core stays MLIR-free):
-- `kernel-smt` (core) — links **only Z3**.
-- `kernel-smt-builder-mlir` — core + MLIR (`arith`/`math`/`scf` + shared tools).
-- `kernel-smt-builder-triton` — core + builder-mlir + Triton dialect.
+- `kernel-tv` (core) — links **only Z3**.
+- `kernel-tv-builder-mlir` — core + MLIR (`arith`/`math`/`scf` + shared tools).
+- `kernel-tv-builder-triton` — core + builder-mlir + Triton dialect.
 - `triton-tv` (tool) — links builder-triton; binary path unchanged.
 
 **Long-term goal of the builder layer:** a builder for *every* language we
-support, each modeling onto kernel-smt (or kernel-gpu-smt). Only builders touch a
+support, each modeling onto kernel-tv (or kernel-gpu-tv). Only builders touch a
 language / IR framework; the core never does.
 
 ## Migration steps (each keeps eval + unit tests green)
-1. Create `semantics/` (namespace `kernel_smt`) + `DType`. Move `AbstractFp`
+1. Create `semantics/` (namespace `kernel_tv`) + `DType`. Move `AbstractFp`
    in, swap `mlir::FloatType`→`DType`. Add a tiny adapter shim so existing code
    compiles.
 2. Move `Memory` + value wrappers into the lib; `mlir::Type`→`DType`; introduce
@@ -262,13 +262,13 @@ language / IR framework; the core never does.
 3. Extract elementwise/structural/reduce/dot semantics from `semantics/mlir/*`
    into `Context`; handlers become thin adapters (read operands → call builder).
 4. `Env`/walking stay in adapter; `State` holds `Context`+`MemState`.
-5. Stand up a `kernel-gpu-smt/` skeleton (near-empty today).
+5. Stand up a `kernel-gpu-tv/` skeleton (near-empty today).
 
 ## Deferred / open
 - Long-term: make the access interface pluggable (memref/affine window) so
-  TPU/Mosaic and Trainium/NKI can reuse `kernel-smt` (survey §"Answer").
-- `kernel-gpu-smt` real contents arrive with TTGIR support (layouts, shared mem,
+  TPU/Mosaic and Trainium/NKI can reuse `kernel-tv` (survey §"Answer").
+- `kernel-gpu-tv` real contents arrive with TTGIR support (layouts, shared mem,
   warp, async, warp-spec).
 - Real/IntegerRange/FPA FP modes.
 - Exact `Combine`/`dot` dim representation; multi-dim reduce.
-- Directory names `kernel-smt` / `kernel-gpu-smt` are provisional.
+- Directory names `kernel-tv` / `kernel-gpu-tv` are provisional.

@@ -226,8 +226,8 @@ int main(int argc, char **argv) {
   // z3::context so program-ID and FP function symbols are shared across the two
   // programs — exactly the pre-M0 behavior (which used two AbstractFpRegistry
   // objects on one z3::context).
-  kernel_smt::Context srcCtx(ctx, Semantics::FPMode::Abstract);
-  kernel_smt::Context tgtCtx(ctx, Semantics::FPMode::Abstract);
+  kernel_tv::Context srcCtx(ctx, Semantics::FPMode::Abstract);
+  kernel_tv::Context tgtCtx(ctx, Semantics::FPMode::Abstract);
 
   Semantics::State s1 = Semantics::State::initFromFunc(srcArgs, srcCtx, "src");
   Semantics::State s2 = Semantics::State::initFromFunc(tgtArgs, tgtCtx, "tgt");
@@ -285,9 +285,9 @@ int main(int argc, char **argv) {
   // src arg i's memory ↔ tgt arg i's memory. src and tgt come from different
   // functions, so the adapter builds this MemId pairing explicitly and hands it
   // to the MLIR-free core (which then checks that at least one paired memory
-  // differs at a fresh symbolic witness address; see kernel_smt::checkEquivalence
+  // differs at a fresh symbolic witness address; see kernel_tv::checkEquivalence
   // for why we compare pointwise instead of `array != array`).
-  std::vector<std::pair<kernel_smt::MemId, kernel_smt::MemId>> pairing;
+  std::vector<std::pair<kernel_tv::MemId, kernel_tv::MemId>> pairing;
   for (unsigned i = 0; i < srcArgs.size(); ++i) {
     auto srcMemIt = s1f.ptrArgToMem.find(srcArgs[i]);
     auto tgtMemIt = s2f.ptrArgToMem.find(tgtArgs[i]);
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
 
   auto t2 = std::chrono::high_resolution_clock::now();
   auto result =
-      kernel_smt::checkEquivalence(s1f.memState, s2f.memState, pairing, solver);
+      kernel_tv::checkEquivalence(s1f.memState, s2f.memState, pairing, solver);
   auto t3 = std::chrono::high_resolution_clock::now();
   llvm::outs() << "Solver: " << std::chrono::duration<double>(t3 - t2).count()
                << " s\n";

@@ -1,4 +1,4 @@
-// Z3-only unit test for the kernel-smt core Types. Deliberately includes NO
+// Z3-only unit test for the kernel-tv core Types. Deliberately includes NO
 // MLIR/Triton headers — this is the proof the core builds/runs without MLIR.
 
 #include "semantics/Types.h"
@@ -6,7 +6,7 @@
 
 #include <z3++.h>
 
-using namespace kernel_smt;
+using namespace kernel_tv;
 
 TEST(Types, ByteWidth) {
   EXPECT_EQ(getByteWidth(DType::I1), 1u);

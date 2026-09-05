@@ -1,6 +1,6 @@
 # PrebuiltTriton.cmake — enable the Triton backend from an already-built Triton.
 #
-# Defines the imported target `kernel-smt::triton` if (and only if) TRITON_ROOT
+# Defines the imported target `kernel-tv::triton` if (and only if) TRITON_ROOT
 # points at a Triton checkout that has been built. If it does not, this module
 # stays silent and the top-level CMakeLists builds the core only.
 #
@@ -11,13 +11,13 @@
 #                     Default: recovered from TRITON_BUILD_DIR/CMakeCache.txt.
 #
 # Escape hatch, for a build tree we cannot read automatically:
-#   KERNEL_SMT_TRITON_OBJECTS   a ;-list of .o/.a files to link, used verbatim.
+#   KERNEL_TV_TRITON_OBJECTS   a ;-list of .o/.a files to link, used verbatim.
 
 include(PrebuiltMLIRCompiler)
 
-kernel_smt_resolve_input(TRITON_ROOT      "Triton source checkout (enables the Triton backend)")
-kernel_smt_resolve_input(TRITON_BUILD_DIR "Triton CMake build tree (default: <TRITON_ROOT>/build/cmake.*)")
-kernel_smt_resolve_input(LLVM_SYSPATH     "LLVM/MLIR install Triton was built against")
+kernel_tv_resolve_input(TRITON_ROOT      "Triton source checkout (enables the Triton backend)")
+kernel_tv_resolve_input(TRITON_BUILD_DIR "Triton CMake build tree (default: <TRITON_ROOT>/build/cmake.*)")
+kernel_tv_resolve_input(LLVM_SYSPATH     "LLVM/MLIR install Triton was built against")
 
 if(NOT TRITON_ROOT)
   return()
@@ -57,11 +57,11 @@ get_filename_component(TRITON_BUILD_DIR "${TRITON_BUILD_DIR}" ABSOLUTE)
 
 # --- Recover the LLVM Triton was built against -------------------------------
 if(NOT LLVM_SYSPATH)
-  kernel_smt_read_cmake_cache("${TRITON_BUILD_DIR}" "MLIR_DIR" _cached_mlir_dir)
+  kernel_tv_read_cmake_cache("${TRITON_BUILD_DIR}" "MLIR_DIR" _cached_mlir_dir)
   if(_cached_mlir_dir)
     set(MLIR_DIR "${_cached_mlir_dir}")
   else()
-    kernel_smt_read_cmake_cache("${TRITON_BUILD_DIR}" "LLVM_LIBRARY_DIR" _llvm_libdir)
+    kernel_tv_read_cmake_cache("${TRITON_BUILD_DIR}" "LLVM_LIBRARY_DIR" _llvm_libdir)
     if(NOT _llvm_libdir)
       message(FATAL_ERROR
         "Could not recover LLVM from ${TRITON_BUILD_DIR}/CMakeCache.txt "
@@ -71,7 +71,7 @@ if(NOT LLVM_SYSPATH)
   endif()
 endif()
 
-kernel_smt_find_mlir("${LLVM_SYSPATH}")
+kernel_tv_find_mlir("${LLVM_SYSPATH}")
 # The object list and include path below are read out of the build tree at
 # configure time, so they go stale the moment Triton is rebuilt with different
 # sources. Re-run CMake when that happens instead of failing at link time with
@@ -79,9 +79,9 @@ kernel_smt_find_mlir("${LLVM_SYSPATH}")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
              "${TRITON_BUILD_DIR}/build.ninja")
 
-message(STATUS "kernel-smt: Triton backend from ${TRITON_ROOT}")
-message(STATUS "kernel-smt:   build tree ${TRITON_BUILD_DIR}")
-message(STATUS "kernel-smt:   MLIR ${MLIR_DIR} (LLVM ${LLVM_PACKAGE_VERSION})")
+message(STATUS "kernel-tv: Triton backend from ${TRITON_ROOT}")
+message(STATUS "kernel-tv:   build tree ${TRITON_BUILD_DIR}")
+message(STATUS "kernel-tv:   MLIR ${MLIR_DIR} (LLVM ${LLVM_PACKAGE_VERSION})")
 
 # --- Harvest what triton-opt links -------------------------------------------
 # `bin/triton-opt` links exactly the set triton-tv needs: compare Triton's
@@ -92,16 +92,16 @@ message(STATUS "kernel-smt:   MLIR ${MLIR_DIR} (LLVM ${LLVM_PACKAGE_VERSION})")
 set(_tt_objs "")
 set(_tt_how "")
 
-if(KERNEL_SMT_TRITON_OBJECTS)
-  set(_tt_objs "${KERNEL_SMT_TRITON_OBJECTS}")
-  set(_tt_how "KERNEL_SMT_TRITON_OBJECTS")
+if(KERNEL_TV_TRITON_OBJECTS)
+  set(_tt_objs "${KERNEL_TV_TRITON_OBJECTS}")
+  set(_tt_how "KERNEL_TV_TRITON_OBJECTS")
 endif()
 
 if(NOT _tt_objs AND EXISTS "${TRITON_BUILD_DIR}/build.ninja")
-  find_program(KERNEL_SMT_NINJA NAMES ninja ninja-build)
-  if(KERNEL_SMT_NINJA)
+  find_program(KERNEL_TV_NINJA NAMES ninja ninja-build)
+  if(KERNEL_TV_NINJA)
     execute_process(
-      COMMAND "${KERNEL_SMT_NINJA}" -C "${TRITON_BUILD_DIR}" -t query bin/triton-opt
+      COMMAND "${KERNEL_TV_NINJA}" -C "${TRITON_BUILD_DIR}" -t query bin/triton-opt
       OUTPUT_VARIABLE _query RESULT_VARIABLE _query_rc ERROR_QUIET)
     if(_query_rc EQUAL 0)
       string(REPLACE "\n" ";" _query_lines "${_query}")
@@ -167,20 +167,20 @@ if(_tt_count LESS 50)
   message(FATAL_ERROR
     "Only found ${_tt_count} Triton link inputs in ${TRITON_BUILD_DIR} "
     "(via ${_tt_how}). Expected a few hundred. Is Triton actually built? "
-    "If the build tree is unusual, pass the list as -DKERNEL_SMT_TRITON_OBJECTS=...")
+    "If the build tree is unusual, pass the list as -DKERNEL_TV_TRITON_OBJECTS=...")
 endif()
 list(LENGTH _tt_archives _tt_archive_count)
 message(STATUS
-  "kernel-smt:   ${_tt_count} Triton objects + ${_tt_archive_count} archives (${_tt_how})")
+  "kernel-tv:   ${_tt_count} Triton objects + ${_tt_archive_count} archives (${_tt_how})")
 
 # --- The backend target ------------------------------------------------------
 # INTERFACE sources re-expose the harvested objects the same way Triton's OBJECT
 # libraries do in-tree (`target_sources(... INTERFACE $<TARGET_OBJECTS:...>)`),
 # so anything linking this target gets them on its link line.
-add_library(kernel-smt-triton INTERFACE)
-add_library(kernel-smt::triton ALIAS kernel-smt-triton)
+add_library(kernel-tv-triton INTERFACE)
+add_library(kernel-tv::triton ALIAS kernel-tv-triton)
 
-target_sources(kernel-smt-triton INTERFACE ${_tt_objs})
+target_sources(kernel-tv-triton INTERFACE ${_tt_objs})
 
 # Take the include path off triton-opt too, for the same reason we take its
 # objects: each backend adds directories of its own (the AMD passes need
@@ -188,14 +188,14 @@ target_sources(kernel-smt-triton INTERFACE ${_tt_objs})
 # the same way), and those rode on CMake targets we are not importing. The
 # explicit entries below are the ones we rely on by name, as a floor in case the
 # build tree cannot be read.
-kernel_smt_ninja_includes("${TRITON_BUILD_DIR}"
+kernel_tv_ninja_includes("${TRITON_BUILD_DIR}"
   "bin/CMakeFiles/triton-opt.dir/triton-opt.cpp.o" _tt_includes)
 if(_tt_includes)
   list(LENGTH _tt_includes _tt_inc_count)
-  message(STATUS "kernel-smt:   ${_tt_inc_count} include dirs (from triton-opt)")
+  message(STATUS "kernel-tv:   ${_tt_inc_count} include dirs (from triton-opt)")
 endif()
 
-target_include_directories(kernel-smt-triton SYSTEM INTERFACE
+target_include_directories(kernel-tv-triton SYSTEM INTERFACE
   ${_tt_includes}
   ${TRITON_ROOT}                      # "bin/RegisterTritonDialects.h"
   ${TRITON_ROOT}/include              # "triton/Dialect/..."
@@ -212,8 +212,8 @@ target_include_directories(kernel-smt-triton SYSTEM INTERFACE
 # We deliberately do NOT pass Triton's -fno-exceptions/-fno-rtti: the builder
 # layer needs std::throw (Env::lookup) and z3++ exceptions, exactly as in-tree.
 separate_arguments(_llvm_defs NATIVE_COMMAND "${LLVM_DEFINITIONS}")
-target_compile_definitions(kernel-smt-triton INTERFACE ${_llvm_defs})
-target_compile_options(kernel-smt-triton INTERFACE
+target_compile_definitions(kernel-tv-triton INTERFACE ${_llvm_defs})
+target_compile_options(kernel-tv-triton INTERFACE
   -D__STDC_FORMAT_MACROS -fPIC -fvisibility=hidden)
 
 # LLVM is normally built without RTTI or exceptions, and a translation unit that
@@ -223,15 +223,15 @@ target_compile_options(kernel-smt-triton INTERFACE
 # off the LLVM we found instead of hardcoding it, and expose it for the few
 # targets that want it. The builder layer deliberately does NOT use it: it
 # throws (Env::lookup) and z3++ throws.
-set(KERNEL_SMT_NO_EH_RTTI_FLAGS "")
+set(KERNEL_TV_NO_EH_RTTI_FLAGS "")
 if(NOT LLVM_ENABLE_RTTI)
-  list(APPEND KERNEL_SMT_NO_EH_RTTI_FLAGS -fno-rtti)
+  list(APPEND KERNEL_TV_NO_EH_RTTI_FLAGS -fno-rtti)
 endif()
 if(NOT LLVM_ENABLE_EH)
-  list(APPEND KERNEL_SMT_NO_EH_RTTI_FLAGS -fno-exceptions)
+  list(APPEND KERNEL_TV_NO_EH_RTTI_FLAGS -fno-exceptions)
 endif()
 
-target_link_libraries(kernel-smt-triton INTERFACE
+target_link_libraries(kernel-tv-triton INTERFACE
   ${_tt_archives}   # libTritonTest*.a -- RegisterTritonDialects.h registers them
   MLIRIR
   MLIRPass

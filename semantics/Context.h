@@ -1,7 +1,7 @@
-#ifndef KERNEL_SMT_CONTEXT_H
-#define KERNEL_SMT_CONTEXT_H
+#ifndef KERNEL_TV_CONTEXT_H
+#define KERNEL_TV_CONTEXT_H
 
-// kernel-smt core — the builder API.
+// kernel-tv core — the builder API.
 //
 // A Context is the single object a builder (per-language adapter) talks to when
 // it models a program onto the core. It owns the Z3 context, the chosen FP
@@ -24,7 +24,7 @@
 #include <vector>
 #include <z3++.h>
 
-namespace kernel_smt {
+namespace kernel_tv {
 
 class Context {
 public:
@@ -136,6 +136,6 @@ private:
   AbstractFpRegistry fpReg_;
 };
 
-} // namespace kernel_smt
+} // namespace kernel_tv
 
-#endif // KERNEL_SMT_CONTEXT_H
+#endif // KERNEL_TV_CONTEXT_H

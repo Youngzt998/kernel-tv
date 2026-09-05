@@ -37,7 +37,7 @@ makeModule(mlir::MLIRContext &ctx, llvm::ArrayRef<mlir::Type> argTypes) {
 // call Memory::store/load directly (which does not read ptrBase); provenance is
 // exercised separately by the handlers.
 static Tensor makePtrTile(z3::context &ctx, DType elem, uint64_t base,
-                          uint64_t stride, kernel_smt::Shape shape) {
+                          uint64_t stride, kernel_tv::Shape shape) {
   z3::expr i = ctx.bv_const("i", 32);
   z3::expr b = ctx.bv_val(base, 64);
   z3::expr st = ctx.bv_val(stride, 64);
@@ -45,14 +45,14 @@ static Tensor makePtrTile(z3::context &ctx, DType elem, uint64_t base,
                 std::nullopt};
 }
 
-static Tensor makeMaskTile(z3::context &ctx, bool val, kernel_smt::Shape shape) {
+static Tensor makeMaskTile(z3::context &ctx, bool val, kernel_tv::Shape shape) {
   z3::expr i = ctx.bv_const("i", 32);
   return Tensor{z3::lambda(i, ctx.bool_val(val)), shape, DType::I1,
                 std::nullopt};
 }
 
 static Tensor makeConstTile(z3::context &ctx, DType elem, uint32_t val,
-                            kernel_smt::Shape shape) {
+                            kernel_tv::Shape shape) {
   z3::expr i = ctx.bv_const("i", 32);
   return Tensor{z3::lambda(i, ctx.bv_val(val, 32)), shape, elem, std::nullopt};
 }
@@ -204,7 +204,7 @@ TEST(State, EquivalentStatesUNSAT) {
 
   std::vector<std::pair<MemId, MemId>> pairing = {{id, id}};
   EXPECT_EQ(
-      kernel_smt::checkEquivalence(s1.memState, s2.memState, pairing, solver),
+      kernel_tv::checkEquivalence(s1.memState, s2.memState, pairing, solver),
       z3::unsat);
 }
 
@@ -240,7 +240,7 @@ TEST(State, NonEquivalentStatesSAT) {
 
   std::vector<std::pair<MemId, MemId>> pairing = {{id, id}};
   EXPECT_EQ(
-      kernel_smt::checkEquivalence(s1.memState, s2.memState, pairing, solver),
+      kernel_tv::checkEquivalence(s1.memState, s2.memState, pairing, solver),
       z3::sat);
 }
 
@@ -289,7 +289,7 @@ TEST(State, TwoOutputArgsCheckedTogether) {
 
   std::vector<std::pair<MemId, MemId>> pairing = {{idA, idA}, {idB, idB}};
   EXPECT_EQ(
-      kernel_smt::checkEquivalence(s1.memState, s2.memState, pairing, solver),
+      kernel_tv::checkEquivalence(s1.memState, s2.memState, pairing, solver),
       z3::sat)
       << "difference in argB must be detected";
 }

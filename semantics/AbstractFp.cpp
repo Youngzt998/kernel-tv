@@ -2,9 +2,9 @@
 
 #include <stdexcept>
 
-// Core (kernel-smt) — MLIR-free: use std exceptions instead of llvm_unreachable.
+// Core (kernel-tv) — MLIR-free: use std exceptions instead of llvm_unreachable.
 
-using namespace kernel_smt;
+using namespace kernel_tv;
 
 //===----------------------------------------------------------------------===//
 // AbstractFp

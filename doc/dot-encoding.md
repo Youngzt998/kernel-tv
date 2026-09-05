@@ -2,7 +2,7 @@
 
 > **Status: proposed design note — NOT an adopted decision.** Question B1
 > (`tt.dot` fidelity) is still open. If we adopt this, it must be written into
-> `kernel-smt-design.md` / `roadmap.md` as an explicit decision.
+> `kernel-tv-design.md` / `roadmap.md` as an explicit decision.
 >
 > **On novelty:** none of this is an original technique — see §8 and the
 > citation list. It is a recombination of standard abstraction-refinement
@@ -96,7 +96,7 @@ contract(K) = reduce_k( map(mul, A, B) )
 Defining it as a composition means it inherits the loop-summarization machinery,
 the FP axiom profiles, and the split/merge lemmas automatically, instead of
 needing its own parallel set. It also matches the abstract tensor operation set
-(`kernel-smt-design.md` §"Abstract tensor operation set"), where `contract(K)` is
+(`kernel-tv-design.md` §"Abstract tensor operation set"), where `contract(K)` is
 already a listed category.
 
 ## 7. Separate index reasoning from arithmetic reasoning
@@ -127,7 +127,7 @@ which requires **associativity of `fp_add`**. Therefore:
 | **exact / bit-to-bit** | no | ✅ yes — split-K really does change the bits |
 | **reassoc-allowed** | yes | ✅ yes — it is a legal reordering |
 
-So the split lemma is *gated* by the profile (`kernel-smt-design.md` §"FP axiom
+So the split lemma is *gated* by the profile (`kernel-tv-design.md` §"FP axiom
 profiles"), and the exact/reassoc pair distinguishes "deliberate performance
 reordering" from "miscompile" for dot exactly as it does for reductions.
 

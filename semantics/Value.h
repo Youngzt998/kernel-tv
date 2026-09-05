@@ -1,11 +1,11 @@
-#ifndef KERNEL_SMT_VALUE_H
-#define KERNEL_SMT_VALUE_H
+#ifndef KERNEL_TV_VALUE_H
+#define KERNEL_TV_VALUE_H
 
-// kernel-smt core — value wrappers for encoded SSA values.
+// kernel-tv core — value wrappers for encoded SSA values.
 //
 // A source value (scalar, tensor, or pointer) is encoded as one of these three
-// Z3-backed structs. They are MLIR-free: types are the neutral kernel_smt::DType,
-// and pointer provenance is the opaque kernel_smt::MemId (a builder maps its own
+// Z3-backed structs. They are MLIR-free: types are the neutral kernel_tv::DType,
+// and pointer provenance is the opaque kernel_tv::MemId (a builder maps its own
 // source IR types / provenance onto these).
 //
 // These replace the old Semantics::Z3Scalar / Z3Tile / Z3Ptr, swapping the
@@ -24,7 +24,7 @@
 #include <variant>
 #include <z3++.h>
 
-namespace kernel_smt {
+namespace kernel_tv {
 
 // A scalar value encoded as a Z3 expression.
 struct Scalar {
@@ -57,6 +57,6 @@ struct Ptr {
 
 using Value = std::variant<Scalar, Tensor, Ptr>;
 
-} // namespace kernel_smt
+} // namespace kernel_tv
 
-#endif // KERNEL_SMT_VALUE_H
+#endif // KERNEL_TV_VALUE_H

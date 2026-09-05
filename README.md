@@ -1,4 +1,4 @@
-# kernel-smt
+# kernel-tv
 
 SMT translation validation for tile languages. `triton-tv a.ttir b.ttir` proves
 two MLIR functions semantically equivalent with Z3.
@@ -100,7 +100,7 @@ or build Z3 from source and pass `-DZ3_ROOT=/path/to/z3/install`.
 ## Testing
 
 ```bash
-ctest --test-dir build -R KernelSmt          # core, Z3-only
+ctest --test-dir build -R KernelTv          # core, Z3-only
 ctest --test-dir build -R TestTritonTV     # builder, needs the Triton backend
 python eval/run_eval.py all                # validator gates
 python eval/permute_passes.py              # pass-permutation bug hunt
