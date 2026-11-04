@@ -1,0 +1,13 @@
+module {
+  tt.func public @dot_witness(%out: !tt.ptr<f32>) {
+    %a = arith.constant dense<3.000000e+38> : tensor<1x2xf32>
+    %b = arith.constant dense<1.000000e+00> : tensor<2x1xf32>
+    %zero = arith.constant dense<0.000000e+00> : tensor<1x1xf32>
+    %acc = arith.constant dense<0xFF800000> : tensor<1x1xf32>
+    %result = tt.dot %a, %b, %acc, inputPrecision = ieee : tensor<1x2xf32> * tensor<2x1xf32> -> tensor<1x1xf32>
+    %ptr = tt.splat %out : !tt.ptr<f32> -> tensor<1x1x!tt.ptr<f32>>
+    %mask = arith.constant dense<true> : tensor<1x1xi1>
+    tt.store %ptr, %result, %mask : tensor<1x1x!tt.ptr<f32>>
+    tt.return
+  }
+}

@@ -259,20 +259,20 @@ int main(int argc, char **argv) {
       parseMLIRFile(inputFile1, context);
   if (!module1) {
     llvm::errs() << "Failed to parse: " << inputFile1 << "\n";
-    return 1;
+    return 2;
   }
   mlir::OwningOpRef<mlir::ModuleOp> module2 =
       parseMLIRFile(inputFile2, context);
   if (!module2) {
     llvm::errs() << "Failed to parse: " << inputFile2 << "\n";
-    return 1;
+    return 2;
   }
 
   mlir::triton::FuncOp func1 = extractFunc(*module1);
   mlir::triton::FuncOp func2 = extractFunc(*module2);
   if (!func1 || !func2) {
     llvm::errs() << "Could not find tt.func in one of the modules.\n";
-    return 1;
+    return 2;
   }
 
   if (hasUnsupportedOp(func1, fpModeOption == "fpa", assumeDotOrderedFma) ||
@@ -298,7 +298,18 @@ int main(int argc, char **argv) {
 
   if (srcArgs.size() != tgtArgs.size()) {
     llvm::errs() << "Argument count mismatch.\n";
-    return 1;
+    return 2;
+  }
+  if (func1.getFunctionType().getNumResults() ||
+      func2.getFunctionType().getNumResults()) {
+    llvm::errs() << "UNKNOWN: function return values are not modeled outputs\n";
+    return 2;
+  }
+  for (unsigned i = 0; i < srcArgs.size(); ++i) {
+    if (srcArgs[i].getType() != tgtArgs[i].getType()) {
+      llvm::errs() << "UNKNOWN: corresponding argument types differ\n";
+      return 2;
+    }
   }
 
   // One core Context per program (src, tgt), both sharing the single

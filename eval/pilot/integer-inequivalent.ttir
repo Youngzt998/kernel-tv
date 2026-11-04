@@ -1,0 +1,12 @@
+module {
+  tt.func public @control(%out: !tt.ptr<i32>, %x: i32) {
+    %two = arith.constant 2 : i32
+    %zero = arith.constant 0 : i32
+    %result = arith.addi %x, %two : i32
+    %v = tt.splat %result : i32 -> tensor<1xi32>
+    %ptr = tt.splat %out : !tt.ptr<i32> -> tensor<1x!tt.ptr<i32>>
+    %mask = arith.constant dense<true> : tensor<1xi1>
+    tt.store %ptr, %v, %mask : tensor<1x!tt.ptr<i32>>
+    tt.return
+  }
+}

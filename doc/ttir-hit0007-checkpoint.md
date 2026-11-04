@@ -1,5 +1,32 @@
 # HIT-0007 offline checker checkpoint
 
+## November 2 execution update
+
+The older pending-build statements below are historical. The full adapter now
+builds against Triton `3277063a6660954e0e59563f28a77677c12a65d7`, matching LLVM
+`b010a18d2b648cab83c83967ff26b8fde11acdc6` and persistent Z3 4.15.4. All seven
+core/adapter suites pass. CMake enables C as well as C++ because the matching
+LLVM package performs C configuration checks.
+
+Real CLI controls establish integer identity/rewrite/inequality, bounded static
+loop support and conservative unsupported behavior. The reduced FPA pair
+produces a conditional divergence diagnostic with UNKNOWN; an independent
+exact-rational RNE evaluator confirms NaN versus negative infinity. The pinned
+compiler's `--triton-combine` output matches the archived candidate in generic
+MLIR printing. The full original pair exceeds a 60-second external budget and
+remains inconclusive. The solver timeout alone does not bound interpretation.
+
+The pre-change baseline incorrectly accepts functions returning different
+values because returned values are not modeled. The CLI now rejects non-void
+function results and mismatched argument types as UNKNOWN; input/parse failures
+also use UNKNOWN rather than the non-equivalence exit. These guards do not add
+function-return semantics or prove equivalence for additional inputs.
+
+Frozen controls are in `../eval/pilot/`. Full build, pass replay, independent
+reference and baseline-comparison evidence are in
+`../../../research/experiments/2026-11-02-pilot/`. No historical GPU claim is
+established by these CPU results. Dot-order and NaN-payload limitations remain.
+
 ## Motivation and goal
 
 The saved HIT-0007 TTIR pair moves a loop-carried accumulator from
