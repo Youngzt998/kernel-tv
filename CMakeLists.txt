@@ -14,7 +14,7 @@
 # repository is usable on a machine that has no Triton and no LLVM.
 
 cmake_minimum_required(VERSION 3.20)
-project(kernel-tv CXX)
+project(kernel-tv C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

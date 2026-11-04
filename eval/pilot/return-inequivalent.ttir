@@ -1,0 +1,7 @@
+module {
+  tt.func public @return_control(%x: i32) -> i32 {
+    %one = arith.constant 1 : i32
+    %result = arith.addi %x, %one : i32
+    tt.return %result : i32
+  }
+}

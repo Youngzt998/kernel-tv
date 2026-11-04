@@ -135,6 +135,10 @@ The output is a written mapping from bug to required structure, plus a verdict
 on each bug's reality. It decides what sections 2 and 4 have to deliver, so it
 comes first.
 
+The first evidence review is in [`ttir-bug-mechanisms.md`](ttir-bug-mechanisms.md).
+It separates reported GPU bit differences from TTIR semantic differences and
+records which reproduction steps remain open.
+
 ### 3.2 Current reach
 
 The checker validates semantics-preserving pass permutations today. The gates in
@@ -204,18 +208,28 @@ Four optional encodings sit beyond it.
 and the real behaviour of subnormals, infinities and NaN. `Types.cpp` already
 maps each float `DType` to its `fpa_sort(expBits, sigBits)` and `Memory.cpp`
 already converts between the raw byte representation and that sort, so the
-plumbing exists. This is the encoding that can decide `ttir-broad/HIT-0007` and
-the three parked TTIR reports, whose entire content is which special value came
-out. The solver pays for it: `bin/triton-tv.cpp` carries two FPA commutativity
-checks that print their own solve time, which is the cheapest available
-measurement of the gap.
+plumbing exists. This encoding can distinguish the NaN-versus-Inf result in
+`ttir-broad/HIT-0007`. It cannot decide the three parked payload-only reports:
+Z3 FPA does not retain individual NaN payloads. The solver pays for FPA:
+`bin/triton-tv.cpp` carries two FPA commutativity checks that print their own
+solve time, which is the cheapest available measurement of the gap.
+
+Implementation note (2026-10-12): the core now supports FPA constants,
+add/sub/mul/div, fused multiply-add, and a conditional ordered-FMA matrix dot.
+CPU-only regressions establish the accumulator-order counterexample. The TTIR
+adapter has new dot and static-loop code but has not been built against Triton
+on this machine. The binary's FPA mode reports `UNKNOWN` until exact output
+bits are validated; payload-only reports still need a payload-aware encoding.
+The [HIT-0007 checkpoint](ttir-hit0007-checkpoint.md) tracks this one path.
 
 *Axiom profiles on top of Abstract.* Adding associativity as an axiom makes
-reassociating transformations provably equivalent; withholding it makes them
-`NOT EQUIVALENT`. The same switch decides whether a difference confined to a
-NaN payload or to the sign of a zero counts, which is the question that left the
-three TTIR reports parked. Two profiles are wanted, exact bit-to-bit and
-reassociation-allowed, selected by the flag in section 1.
+reassociating transformations provably equivalent; withholding it can make the
+abstract formulas differ. A different expression tree can be SAT in this
+underconstrained model without a concrete floating-point witness. Two profiles
+are wanted, exact bit-to-bit and reassociation-allowed, selected by the flag in
+section 1. The exact-bit profile also needs a payload-aware representation of
+NaNs; an associativity switch alone does not provide one. Under the chosen
+exact-bit policy, payload-only differences count as mismatches once modeled.
 
 *Real.* An FP value becomes a rational and the operations become exact
 arithmetic over it. Reassociation and the algebraic identities hold by

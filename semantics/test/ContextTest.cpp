@@ -317,4 +317,108 @@ TEST(Context, ProgramIdSharedSymbol) {
   EXPECT_EQ(solver.check(), z3::unsat);
 }
 
+//===----------------------------------------------------------------------===//
+// IEEE FP operations needed for the dot accumulator-order witness
+//===----------------------------------------------------------------------===//
+
+TEST(Context, FpaConstantsPreserveInfinityAndSignedZero) {
+  z3::context z;
+  Context ctx(z, FPMode::FPA);
+  Scalar inf = ctx.constFloatBits(0x7f800000u, DType::F32);
+  Scalar negZero = ctx.constFloatBits(0x80000000u, DType::F32);
+  EXPECT_TRUE(inf.e.is_fpa());
+
+  z3::solver solver(z);
+  solver.add(!inf.e.mk_is_inf() ||
+             negZero.e.mk_to_ieee_bv() != z.bv_val(0x80000000u, 32));
+  EXPECT_EQ(solver.check(), z3::unsat);
+}
+
+TEST(Context, FpaDotAccumulatorOrderChangesNanClass) {
+  z3::context z;
+  Context ctx(z, FPMode::FPA);
+  Scalar product = ctx.constFloatBits(0x7f400000u, DType::F32);
+  Scalar one = ctx.constFloatBits(0x3f800000u, DType::F32);
+  Scalar zero = ctx.constFloatBits(0, DType::F32);
+  Scalar negInf = ctx.constFloatBits(0xff800000u, DType::F32);
+
+  Scalar dot = ctx.fma(product, one, ctx.fma(product, one, zero));
+  Scalar reference = std::get<Scalar>(ctx.add(dot, negInf));
+  Scalar candidate = ctx.fma(product, one,
+                             ctx.fma(product, one, negInf));
+
+  z3::solver solver(z);
+  solver.add(!reference.e.mk_is_nan() ||
+             !candidate.e.mk_is_inf() ||
+             reference.e.mk_to_ieee_bv() == candidate.e.mk_to_ieee_bv());
+  EXPECT_EQ(solver.check(), z3::unsat);
+}
+
+TEST(Context, FpaFindsAccumulatorOrderCounterexample) {
+  z3::context z;
+  Context ctx(z, FPMode::FPA);
+  Scalar product = std::get<Scalar>(ctx.freshInput(DType::F32, {}, "product"));
+  Scalar one = ctx.constFloatBits(0x3f800000u, DType::F32);
+  Scalar zero = ctx.constFloatBits(0, DType::F32);
+  Scalar negInf = ctx.constFloatBits(0xff800000u, DType::F32);
+
+  Scalar dot = ctx.fma(product, one, ctx.fma(product, one, zero));
+  Scalar reference = std::get<Scalar>(ctx.add(dot, negInf));
+  Scalar candidate = ctx.fma(product, one,
+                             ctx.fma(product, one, negInf));
+
+  z3::solver solver(z);
+  solver.add(!product.e.mk_is_nan() && !product.e.mk_is_inf());
+  solver.add(reference.e.mk_is_nan() && candidate.e.mk_is_inf());
+  EXPECT_EQ(solver.check(), z3::sat);
+}
+
+TEST(Context, SignedDivisionAndRemainder) {
+  z3::context z;
+  Context ctx(z, FPMode::Abstract);
+  Scalar a = ctx.constInt(-7, DType::I32);
+  Scalar b = ctx.constInt(3, DType::I32);
+  auto q = std::get<Scalar>(ctx.divSigned(a, b));
+  auto r = std::get<Scalar>(ctx.remSigned(a, b));
+  z3::solver solver(z);
+  solver.add(q.e != z.bv_val(-2, 32) || r.e != z.bv_val(-1, 32));
+  EXPECT_EQ(solver.check(), z3::unsat);
+}
+
+TEST(Context, ExpandAndBroadcastRows) {
+  z3::context z;
+  Context ctx(z, FPMode::Abstract);
+  Tensor row = ctx.iota(10, Shape{2}, DType::I32);
+  Tensor expanded = ctx.expandDims(row, 0);
+  Tensor tiled = ctx.broadcast(expanded, Shape{3, 2});
+  Tensor column = ctx.expandDims(row, 1);
+  Tensor tiledColumns = ctx.broadcast(column, Shape{2, 3});
+  EXPECT_EQ(expanded.shape, (Shape{1, 2}));
+  EXPECT_EQ(tiled.shape, (Shape{3, 2}));
+  z3::solver solver(z);
+  solver.add(at(tiled, 4) != z.bv_val(10, 32) ||
+             at(tiled, 5) != z.bv_val(11, 32) ||
+             at(tiledColumns, 2) != z.bv_val(10, 32) ||
+             at(tiledColumns, 3) != z.bv_val(11, 32));
+  EXPECT_EQ(solver.check(), z3::unsat);
+}
+
+TEST(Context, DotFmaAccumulatorPlacementChangesClass) {
+  z3::context z;
+  Context ctx(z, FPMode::FPA);
+  Tensor a = ctx.denseFloatTile({0x7f400000u, 0x7f400000u},
+                                DType::F32, Shape{1, 2});
+  Tensor b = ctx.denseFloatTile({0x3f800000u, 0x3f800000u},
+                                DType::F32, Shape{2, 1});
+  Tensor zero = ctx.splatConst(ctx.constFloatBits(0, DType::F32), Shape{1, 1});
+  Tensor negInf = ctx.splatConst(
+      ctx.constFloatBits(0xff800000u, DType::F32), Shape{1, 1});
+  Tensor reference = std::get<Tensor>(ctx.add(ctx.dotFma(a, b, zero), negInf));
+  Tensor candidate = ctx.dotFma(a, b, negInf);
+  z3::solver solver(z);
+  solver.add(!at(reference, 0).mk_is_nan() ||
+             !at(candidate, 0).mk_is_inf());
+  EXPECT_EQ(solver.check(), z3::unsat);
+}
+
 int main() { return simpletest::runAll(); }

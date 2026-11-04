@@ -145,7 +145,10 @@ Scalar Context::constInt(int64_t v, DType ty) {
 
 Scalar Context::constFloatBits(uint64_t ieeeBits, DType ty) {
   unsigned bw = getByteWidth(ty) * 8;
-  return Scalar{z_.bv_val(ieeeBits, bw), ty};
+  z3::expr bits = z_.bv_val(ieeeBits, bw);
+  if (mode_ == FPMode::FPA)
+    return Scalar{bits.mk_from_ieee_bv(getElemSort(z_, ty, mode_)), ty};
+  return Scalar{bits, ty};
 }
 
 Tensor Context::denseIntTile(const std::vector<int64_t> &values, DType elem,
@@ -171,7 +174,10 @@ Tensor Context::denseFloatTile(const std::vector<uint64_t> &ieeeBits,
       z_.constant("__dense_fp_base", z_.array_sort(z_.bv_sort(32), elemSort));
   unsigned idx = 0;
   for (uint64_t bits : ieeeBits) {
-    arr = z3::store(arr, z_.bv_val(idx, 32), z_.bv_val(bits, bw));
+    z3::expr value = z_.bv_val(bits, bw);
+    if (mode_ == FPMode::FPA)
+      value = value.mk_from_ieee_bv(elemSort);
+    arr = z3::store(arr, z_.bv_val(idx, 32), value);
     ++idx;
   }
   return Tensor{arr, shape, elem, std::nullopt};
@@ -191,6 +197,11 @@ Tensor Context::iota(int64_t start, const Shape &shape, DType elem) {
 Value Context::add(const Value &a, const Value &b) {
   DType elem = elemTypeOf(a);
   if (isFloat(elem)) {
+    if (mode_ == FPMode::FPA)
+      return applyBinaryOp(z_, a, b,
+                           [](z3::expr x, z3::expr y) { return x + y; });
+    if (mode_ != FPMode::Abstract)
+      throw std::logic_error("add: unsupported FP mode");
     AbstractFp &afp = fpReg_.get(elem);
     return applyBinaryOp(z_, a, b,
                          [&](z3::expr x, z3::expr y) { return afp.add(x, y); });
@@ -201,6 +212,11 @@ Value Context::add(const Value &a, const Value &b) {
 Value Context::sub(const Value &a, const Value &b) {
   DType elem = elemTypeOf(a);
   if (isFloat(elem)) {
+    if (mode_ == FPMode::FPA)
+      return applyBinaryOp(z_, a, b,
+                           [](z3::expr x, z3::expr y) { return x - y; });
+    if (mode_ != FPMode::Abstract)
+      throw std::logic_error("sub: unsupported FP mode");
     AbstractFp &afp = fpReg_.get(elem);
     return applyBinaryOp(z_, a, b,
                          [&](z3::expr x, z3::expr y) { return afp.sub(x, y); });
@@ -211,6 +227,11 @@ Value Context::sub(const Value &a, const Value &b) {
 Value Context::mul(const Value &a, const Value &b) {
   DType elem = elemTypeOf(a);
   if (isFloat(elem)) {
+    if (mode_ == FPMode::FPA)
+      return applyBinaryOp(z_, a, b,
+                           [](z3::expr x, z3::expr y) { return x * y; });
+    if (mode_ != FPMode::Abstract)
+      throw std::logic_error("mul: unsupported FP mode");
     AbstractFp &afp = fpReg_.get(elem);
     return applyBinaryOp(z_, a, b,
                          [&](z3::expr x, z3::expr y) { return afp.mul(x, y); });
@@ -222,15 +243,42 @@ Value Context::div(const Value &a, const Value &b) {
   DType elem = elemTypeOf(a);
   if (!isFloat(elem))
     throw std::logic_error("div: only float division is modeled");
+  if (mode_ == FPMode::FPA)
+    return applyBinaryOp(z_, a, b,
+                         [](z3::expr x, z3::expr y) { return x / y; });
+  if (mode_ != FPMode::Abstract)
+    throw std::logic_error("div: unsupported FP mode");
   AbstractFp &afp = fpReg_.get(elem);
   return applyBinaryOp(z_, a, b,
                        [&](z3::expr x, z3::expr y) { return afp.div(x, y); });
+}
+
+Value Context::divSigned(const Value &a, const Value &b) {
+  if (isFloat(elemTypeOf(a)) || elemTypeOf(a) == DType::I1)
+    throw std::logic_error("divSigned: expected integer operands");
+  return applyBinaryOp(z_, a, b,
+                       [](z3::expr x, z3::expr y) { return z3::sdiv(x, y); });
+}
+
+Value Context::remSigned(const Value &a, const Value &b) {
+  if (isFloat(elemTypeOf(a)) || elemTypeOf(a) == DType::I1)
+    throw std::logic_error("remSigned: expected integer operands");
+  return applyBinaryOp(z_, a, b,
+                       [](z3::expr x, z3::expr y) { return z3::srem(x, y); });
+}
+
+Scalar Context::fma(const Scalar &a, const Scalar &b, const Scalar &c) {
+  if (mode_ != FPMode::FPA || !isFloat(a.ty) || a.ty != b.ty || a.ty != c.ty)
+    throw std::logic_error("fma: requires matching float types in FPA mode");
+  return Scalar{z3::fma(a.e, b.e, c.e, z_.fpa_rounding_mode()), a.ty};
 }
 
 Value Context::maxnum(const Value &a, const Value &b) {
   DType elem = elemTypeOf(a);
   if (!isFloat(elem))
     throw std::logic_error("maxnum: only float maxnum is modeled");
+  if (mode_ != FPMode::Abstract)
+    throw std::logic_error("maxnum: unsupported FP mode");
   AbstractFp &afp = fpReg_.get(elem);
   return applyBinaryOp(z_, a, b,
                        [&](z3::expr x, z3::expr y) { return afp.max(x, y); });
@@ -295,6 +343,8 @@ Value Context::exp(const Value &a) {
   DType elem = elemTypeOf(a);
   if (!isFloat(elem))
     throw std::logic_error("exp: only float exp is modeled");
+  if (mode_ != FPMode::Abstract)
+    throw std::logic_error("exp: unsupported FP mode");
   AbstractFp &afp = fpReg_.get(elem);
   if (auto *sc = std::get_if<Scalar>(&a))
     return Scalar{afp.exp(sc->e), elem};
@@ -316,6 +366,62 @@ Tensor Context::splat(const Scalar &s, const Shape &shape) {
 Tensor Context::splatPtr(const Ptr &p, const Shape &shape) {
   z3::expr i = z_.bv_const("__si", 32);
   return Tensor{z3::lambda(i, p.e), shape, DType::Ptr, p.base};
+}
+
+Tensor Context::expandDims(const Tensor &src, unsigned axis) {
+  if (axis > src.shape.size())
+    throw std::logic_error("expandDims: axis out of range");
+  Shape shape = src.shape;
+  shape.insert(shape.begin() + axis, 1);
+  // Inserting a unit dimension does not change row-major linear indices.
+  return Tensor{src.e, shape, src.elem, src.ptrBase};
+}
+
+Tensor Context::broadcast(const Tensor &src, const Shape &shape) {
+  if (src.shape.size() != shape.size())
+    throw std::logic_error("broadcast: rank mismatch");
+  for (size_t d = 0; d < shape.size(); ++d)
+    if (src.shape[d] != 1 && src.shape[d] != shape[d])
+      throw std::logic_error("broadcast: incompatible dimensions");
+
+  z3::expr i = z_.bv_const("__broadcast_i", 32);
+  z3::expr srcIndex = z_.bv_val(0, 32);
+  uint64_t outStride = 1;
+  uint64_t inStride = 1;
+  for (size_t d = shape.size(); d-- > 0;) {
+    if (src.shape[d] != 1) {
+      z3::expr coord = z3::urem(z3::udiv(i, z_.bv_val(outStride, 32)),
+                               z_.bv_val(shape[d], 32));
+      srcIndex = srcIndex + coord * z_.bv_val(inStride, 32);
+    }
+    outStride *= static_cast<uint64_t>(shape[d]);
+    inStride *= static_cast<uint64_t>(src.shape[d]);
+  }
+  return Tensor{z3::lambda(i, z3::select(src.e, srcIndex)), shape,
+                src.elem, src.ptrBase};
+}
+
+Tensor Context::dotFma(const Tensor &a, const Tensor &b, const Tensor &c) {
+  if (mode_ != FPMode::FPA || a.shape.size() != 2 || b.shape.size() != 2 ||
+      c.shape.size() != 2 || !isFloat(a.elem) || a.elem != b.elem ||
+      a.elem != c.elem || a.shape[1] != b.shape[0] ||
+      c.shape[0] != a.shape[0] || c.shape[1] != b.shape[1] ||
+      a.shape[1] < 1 || b.shape[1] < 1)
+    throw std::logic_error("dotFma: requires compatible rank-2 FP tiles in FPA mode");
+
+  const uint64_t kExtent = static_cast<uint64_t>(a.shape[1]);
+  const uint64_t nExtent = static_cast<uint64_t>(b.shape[1]);
+  z3::expr i = z_.bv_const("__dot_i", 32);
+  z3::expr row = z3::udiv(i, z_.bv_val(nExtent, 32));
+  z3::expr col = z3::urem(i, z_.bv_val(nExtent, 32));
+  z3::expr acc = z3::select(c.e, i);
+  for (uint64_t k = 0; k < kExtent; ++k) {
+    z3::expr ai = row * z_.bv_val(kExtent, 32) + z_.bv_val(k, 32);
+    z3::expr bi = z_.bv_val(k * nExtent, 32) + col;
+    acc = z3::fma(z3::select(a.e, ai), z3::select(b.e, bi), acc,
+                  z_.fpa_rounding_mode());
+  }
+  return Tensor{z3::lambda(i, acc), c.shape, c.elem, std::nullopt};
 }
 
 Ptr Context::addPtr(const Ptr &ptr, const Scalar &off) {

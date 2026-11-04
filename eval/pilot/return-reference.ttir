@@ -1,0 +1,5 @@
+module {
+  tt.func public @return_control(%x: i32) -> i32 {
+    tt.return %x : i32
+  }
+}
